@@ -112,10 +112,14 @@ namespace SmallBasic.Generators.Scanning
                     this.Blank();
                 }
 
+                this.Line($"if (libraries.{library.Name} != null)");
+                this.Brace();
                 foreach (Event @event in library.Events)
                 {
                     this.Line($@"libraries.{library.Name}.{@event.Name} += () => engine.RaiseEvent(""{library.Name}"", ""{@event.Name}"");");
                 }
+
+                this.Unbrace();
             }
 
             this.Unbrace();

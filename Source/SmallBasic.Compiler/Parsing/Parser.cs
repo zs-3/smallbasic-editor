@@ -84,7 +84,7 @@ namespace SmallBasic.Compiler.Parsing
                     }
 
                     parameters.Add(new ParameterSyntax(paramIdentifier, commaOpt));
-                    if (commaOpt == null)
+                    if (commaOpt.IsDefault())
                     {
                         break;
                     }
@@ -123,7 +123,7 @@ namespace SmallBasic.Compiler.Parsing
 
             this.RunToEndOfLine();
 
-            if (startKind == TokenKind.Function || startKind == TokenKind.Fn || leftParenOpt != null)
+            if (startKind == TokenKind.Function || startKind == TokenKind.Fn || !leftParenOpt.IsDefault())
             {
                 return new FunctionDeclarationSyntax(subToken, nameToken, leftParenOpt, parameters, rightParenOpt, statements, endSubToken);
             }
@@ -214,6 +214,7 @@ namespace SmallBasic.Compiler.Parsing
 
                     return new UnrecognizedStatementSyntax(foundToken);
             }
+
         }
 
         private IfStatementSyntax ParseIfStatement()

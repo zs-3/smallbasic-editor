@@ -48,6 +48,20 @@ namespace SmallBasic.Compiler
             this.lazyAnalysis = new Lazy<RuntimeAnalysis>(() => new RuntimeAnalysis(this));
         }
 
+        public string Text { get; private set; }
+
+        public RuntimeAnalysis Analysis => this.lazyAnalysis.Value;
+
+        public IReadOnlyList<Diagnostic> Diagnostics => this.diagnostics.Contents;
+
+        internal BoundStatementBlock MainModule => this.binder.MainModule;
+
+        internal IReadOnlyDictionary<string, BoundSubModule> SubModules => this.binder.SubModules;
+
+        public MonacoCompletionItem[] ProvideCompletionItems(TextPosition position) => CompletionItemProvider.Provide(this.parser, this.binder, position);
+
+        public string[] ProvideHover(TextPosition position) => HoverProvider.Provide(this.diagnostics, this.parser, position);
+
         private static string ProcessImports(string sourceText, Func<string, string> fileResolver, string baseDirectory, HashSet<string> visitedPaths, DiagnosticBag diagnostics)
         {
             if (string.IsNullOrEmpty(sourceText) || !sourceText.Contains("Import"))
@@ -64,7 +78,7 @@ namespace SmallBasic.Compiler
                 if (trimmed.StartsWith("Import ", StringComparison.OrdinalIgnoreCase) || trimmed.StartsWith("Import\t", StringComparison.OrdinalIgnoreCase))
                 {
                     string path = trimmed.Substring(6).Trim();
-                    if (path.StartsWith("\"") && path.EndsWith("\"") && path.Length >= 2)
+                    if (path.StartsWith("\"", StringComparison.Ordinal) && path.EndsWith("\"", StringComparison.Ordinal) && path.Length >= 2)
                     {
                         path = path.Substring(1, path.Length - 2);
                     }
@@ -109,19 +123,5 @@ namespace SmallBasic.Compiler
 
             return string.Join(Environment.NewLine, resultLines);
         }
-
-        public string Text { get; private set; }
-
-        public RuntimeAnalysis Analysis => this.lazyAnalysis.Value;
-
-        public IReadOnlyList<Diagnostic> Diagnostics => this.diagnostics.Contents;
-
-        internal BoundStatementBlock MainModule => this.binder.MainModule;
-
-        internal IReadOnlyDictionary<string, BoundSubModule> SubModules => this.binder.SubModules;
-
-        public MonacoCompletionItem[] ProvideCompletionItems(TextPosition position) => CompletionItemProvider.Provide(this.parser, this.binder, position);
-
-        public string[] ProvideHover(TextPosition position) => HoverProvider.Provide(this.diagnostics, this.parser, position);
     }
 }

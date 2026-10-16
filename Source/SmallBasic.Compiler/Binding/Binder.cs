@@ -124,7 +124,7 @@ namespace SmallBasic.Compiler.Binding
                             expr = this.BindExpression(returnStatement.ExpressionOpt);
                         }
 
-                        return new BoundReturnStatement(returnStatement, hasExpression: expr != null, expressionOpt: expr);
+                        return new BoundReturnStatement(returnStatement, hasExpression: !expr.IsDefault(), expressionOpt: expr);
                     }
 
                 case LabelStatementSyntax labelStatement: return new BoundLabelStatement(labelStatement, labelStatement.LabelToken.Text);
@@ -326,6 +326,13 @@ namespace SmallBasic.Compiler.Binding
                             this.diagnostics.ReportAssigningNonSubModuleToEvent(@event.Syntax.Range);
                             return new BoundInvalidExpressionStatement(syntax, assignment);
                         }
+                    }
+
+                case BoundSubModuleInvocationExpression subModuleInvocation:
+                case BoundSubModuleExpression subModule:
+                    {
+                        this.diagnostics.ReportUnassignedExpressionStatement(syntax.Range);
+                        return new BoundInvalidExpressionStatement(syntax, assignment);
                     }
 
                 default:
@@ -586,18 +593,28 @@ namespace SmallBasic.Compiler.Binding
                 case BoundSubModuleExpression subModule:
                     {
                         int expectedParams = 0;
+                        bool isFunction = false;
                         if (!this.SubModules.IsDefault() && this.SubModules.TryGetValue(subModule.Name, out var subModuleNode))
                         {
                             expectedParams = subModuleNode.Parameters.Count;
+                            isFunction = subModuleNode.Syntax is FunctionDeclarationSyntax;
                         }
 
-                        if (!hasErrors && arguments.Count != expectedParams)
+                        if (!hasErrors)
                         {
-                            hasErrors = true;
-                            this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, expectedParams);
+                            if (arguments.Count != expectedParams)
+                            {
+                                hasErrors = true;
+                                this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, expectedParams);
+                            }
+                            else if (expectsValue && !isFunction)
+                            {
+                                hasErrors = true;
+                                this.diagnostics.ReportExpectedExpressionWithAValue(syntax.Range);
+                            }
                         }
 
-                        return new BoundSubModuleInvocationExpression(syntax, hasValue: expectsValue, hasErrors: hasErrors, name: subModule.Name, arguments: arguments);
+                        return new BoundSubModuleInvocationExpression(syntax, hasValue: isFunction, hasErrors: hasErrors, name: subModule.Name, arguments: arguments);
                     }
 
                 default:
@@ -623,7 +640,7 @@ namespace SmallBasic.Compiler.Binding
 
                 return new BoundLibraryTypeExpression(syntax, hasValue: false, hasErrors, name);
             }
-            else if (this.definedSubModules.Contains(name))
+            else if (!expectsValue && this.definedSubModules.Contains(name))
             {
                 return new BoundSubModuleExpression(syntax, hasValue: false, hasErrors: hasErrors, name: name);
             }
