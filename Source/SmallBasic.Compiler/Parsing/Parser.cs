@@ -46,6 +46,8 @@ namespace SmallBasic.Compiler.Parsing
                 switch (this.Peek())
                 {
                     case TokenKind.Sub:
+                    case TokenKind.Function:
+                    case TokenKind.Fn:
                         statements.Add(this.ParseSubModuleDeclaration());
                         break;
                     default:
@@ -59,16 +61,72 @@ namespace SmallBasic.Compiler.Parsing
 
         public StatementBlockSyntax SyntaxTree { get; private set; }
 
-        private SubModuleStatementSyntax ParseSubModuleDeclaration()
+        private BaseStatementSyntax ParseSubModuleDeclaration()
         {
-            var subToken = this.Eat(TokenKind.Sub);
+            var startKind = this.Peek();
+            var subToken = this.Eat(startKind);
             var nameToken = this.Eat(TokenKind.Identifier);
+
+            Token leftParenOpt = null;
+            Token rightParenOpt = null;
+            List<ParameterSyntax> parameters = new List<ParameterSyntax>();
+
+            if (this.index < this.tokens.Count && this.Peek() == TokenKind.LeftParen)
+            {
+                leftParenOpt = this.Eat(TokenKind.LeftParen);
+                while (this.index < this.tokens.Count && this.Peek() != TokenKind.RightParen)
+                {
+                    var paramIdentifier = this.Eat(TokenKind.Identifier);
+                    Token commaOpt = null;
+                    if (this.index < this.tokens.Count && this.Peek() == TokenKind.Comma)
+                    {
+                        commaOpt = this.Eat(TokenKind.Comma);
+                    }
+
+                    parameters.Add(new ParameterSyntax(paramIdentifier, commaOpt));
+                    if (commaOpt == null)
+                    {
+                        break;
+                    }
+                }
+
+                if (this.index < this.tokens.Count && this.Peek() == TokenKind.RightParen)
+                {
+                    rightParenOpt = this.Eat(TokenKind.RightParen);
+                }
+            }
+
             this.RunToEndOfLine();
 
-            var statements = this.ParseStatementsExcept(TokenKind.Sub, TokenKind.EndSub);
+            TokenKind endKind1 = TokenKind.EndSub;
+            TokenKind endKind2 = TokenKind.EndFunction;
+            TokenKind endKind3 = TokenKind.EndFn;
 
-            var endSubToken = this.Eat(TokenKind.EndSub);
+            if (startKind == TokenKind.Function || startKind == TokenKind.Fn)
+            {
+                endKind1 = TokenKind.EndFunction;
+                endKind2 = TokenKind.EndFn;
+                endKind3 = TokenKind.EndSub;
+            }
+
+            var statements = this.ParseStatementsExcept(TokenKind.Sub, TokenKind.Function, TokenKind.Fn, endKind1, endKind2, endKind3);
+
+            Token endSubToken = null;
+            if (this.index < this.tokens.Count && (this.Peek() == endKind1 || this.Peek() == endKind2 || this.Peek() == endKind3 || this.Peek() == TokenKind.EndSub || this.Peek() == TokenKind.EndFunction || this.Peek() == TokenKind.EndFn))
+            {
+                endSubToken = this.Eat(this.Peek());
+            }
+            else
+            {
+                endSubToken = this.Eat(endKind1);
+            }
+
             this.RunToEndOfLine();
+
+            if (startKind == TokenKind.Function || startKind == TokenKind.Fn || leftParenOpt != null)
+            {
+                return new FunctionDeclarationSyntax(subToken, nameToken, leftParenOpt, parameters, rightParenOpt, statements, endSubToken);
+            }
 
             return new SubModuleStatementSyntax(subToken, nameToken, statements, endSubToken);
         }
@@ -109,6 +167,24 @@ namespace SmallBasic.Compiler.Parsing
                         this.RunToEndOfLine();
                         return new ExpressionStatementSyntax(expression);
                     }
+
+                case TokenKind.Return:
+                    var returnToken = this.Eat(TokenKind.Return);
+                    BaseExpressionSyntax returnExprOpt = null;
+                    var currentLine = returnToken.Range.Start.Line;
+                    if (this.index < this.tokens.Count && this.tokens[this.index].Range.Start.Line == currentLine && this.tokens[this.index].Kind != TokenKind.Comment)
+                    {
+                        returnExprOpt = this.ParseBaseExpression();
+                    }
+
+                    this.RunToEndOfLine();
+                    return new ReturnStatementSyntax(returnToken, returnExprOpt);
+
+                case TokenKind.Import:
+                    var importToken = this.Eat(TokenKind.Import);
+                    var pathToken = this.Eat(TokenKind.StringLiteral);
+                    this.RunToEndOfLine();
+                    return new ImportStatementSyntax(importToken, pathToken);
 
                 case TokenKind.GoTo:
                     var goToToken = this.Eat(TokenKind.GoTo);

@@ -17,6 +17,14 @@
   <TokenKind Name="Sub" Display="&quot;Sub&quot;" />
   <TokenKind Name="EndSub" Display="&quot;EndSub&quot;" />
 
+  <TokenKind Name="Function" Display="&quot;Function&quot;" />
+  <TokenKind Name="Fn" Display="&quot;Fn&quot;" />
+  <TokenKind Name="EndFunction" Display="&quot;EndFunction&quot;" />
+  <TokenKind Name="EndFn" Display="&quot;EndFn&quot;" />
+
+  <TokenKind Name="Return" Display="&quot;Return&quot;" />
+  <TokenKind Name="Import" Display="&quot;Import&quot;" />
+
   <TokenKind Name="GoTo" Display="&quot;GoTo&quot;" />
 
   <TokenKind Name="Or" Display="&quot;Or&quot;" />

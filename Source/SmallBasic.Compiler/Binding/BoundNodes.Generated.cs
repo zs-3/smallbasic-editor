@@ -23,6 +23,9 @@ namespace SmallBasic.Compiler.Binding
                 case BoundSubModule subModule:
                     this.VisitSubModule(subModule);
                     break;
+                case BoundReturnStatement returnStatement:
+                    this.VisitReturnStatement(returnStatement);
+                    break;
                 case BoundStatementBlock statementBlock:
                     this.VisitStatementBlock(statementBlock);
                     break;
@@ -122,6 +125,11 @@ namespace SmallBasic.Compiler.Binding
         }
 
         private protected virtual void VisitSubModule(BoundSubModule node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitReturnStatement(BoundReturnStatement node)
         {
             this.DefaultVisit(node);
         }
@@ -292,20 +300,24 @@ namespace SmallBasic.Compiler.Binding
 
     internal sealed class BoundSubModule : BaseBoundNode
     {
-        public BoundSubModule(SubModuleStatementSyntax syntax, string name, BoundStatementBlock body)
+        public BoundSubModule(SubModuleStatementSyntax syntax, string name, IReadOnlyList<string> parameters, BoundStatementBlock body)
         {
             Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
             Debug.Assert(!name.IsDefault(), "'name' must not be null.");
+            Debug.Assert(!parameters.IsDefault(), "'parameters' must not be null.");
             Debug.Assert(!body.IsDefault(), "'body' must not be null.");
 
             this.Syntax = syntax;
             this.Name = name;
+            this.Parameters = parameters;
             this.Body = body;
         }
 
         public SubModuleStatementSyntax Syntax { get; private set; }
 
         public string Name { get; private set; }
+
+        public IReadOnlyList<string> Parameters { get; private set; }
 
         public BoundStatementBlock Body { get; private set; }
 
@@ -314,6 +326,36 @@ namespace SmallBasic.Compiler.Binding
             get
             {
                 yield return this.Body;
+            }
+        }
+    }
+
+    internal sealed class BoundReturnStatement : BaseBoundStatement
+    {
+        public BoundReturnStatement(ReturnStatementSyntax syntax, bool hasExpression, BaseBoundExpression expressionOpt)
+        {
+            Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
+            Debug.Assert(!hasExpression.IsDefault(), "'hasExpression' must not be null.");
+
+            this.Syntax = syntax;
+            this.HasExpression = hasExpression;
+            this.ExpressionOpt = expressionOpt;
+        }
+
+        public ReturnStatementSyntax Syntax { get; private set; }
+
+        public bool HasExpression { get; private set; }
+
+        public BaseBoundExpression ExpressionOpt { get; private set; }
+
+        public override IEnumerable<BaseBoundNode> Children
+        {
+            get
+            {
+                if (!this.ExpressionOpt.IsDefault())
+                {
+                    yield return this.ExpressionOpt;
+                }
             }
         }
     }
@@ -1064,25 +1106,32 @@ namespace SmallBasic.Compiler.Binding
 
     internal sealed class BoundSubModuleInvocationExpression : BaseBoundExpression
     {
-        public BoundSubModuleInvocationExpression(InvocationExpressionSyntax syntax, bool hasValue, bool hasErrors, string name)
+        public BoundSubModuleInvocationExpression(InvocationExpressionSyntax syntax, bool hasValue, bool hasErrors, string name, IReadOnlyList<BaseBoundExpression> arguments)
             : base(hasValue, hasErrors)
         {
             Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
             Debug.Assert(!name.IsDefault(), "'name' must not be null.");
+            Debug.Assert(!arguments.IsDefault(), "'arguments' must not be null.");
 
             this.Syntax = syntax;
             this.Name = name;
+            this.Arguments = arguments;
         }
 
         public InvocationExpressionSyntax Syntax { get; private set; }
 
         public string Name { get; private set; }
 
+        public IReadOnlyList<BaseBoundExpression> Arguments { get; private set; }
+
         public override IEnumerable<BaseBoundNode> Children
         {
             get
             {
-                return Enumerable.Empty<BaseBoundNode>();
+                foreach (var child in this.Arguments)
+                {
+                    yield return child;
+                }
             }
         }
     }

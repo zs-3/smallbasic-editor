@@ -11,6 +11,39 @@
     </Members>
   </SyntaxNode>
 
+  <SyntaxNode Name="ParameterSyntax" Inherits="BaseSyntaxNode">
+    <Members>
+      <Member Name="IdentifierToken" Type="Token" TokenKinds="Identifier" />
+      <Member Name="CommaTokenOpt" Type="Token" IsOptional="true" TokenKinds="Comma" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="FunctionDeclarationSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="FunctionToken" Type="Token" TokenKinds="Function,Fn,Sub" />
+      <Member Name="NameToken" Type="Token" TokenKinds="Identifier" />
+      <Member Name="LeftParenTokenOpt" Type="Token" IsOptional="true" TokenKinds="LeftParen" />
+      <Member Name="Parameters" Type="ParameterSyntax" IsList="true" />
+      <Member Name="RightParenTokenOpt" Type="Token" IsOptional="true" TokenKinds="RightParen" />
+      <Member Name="Body" Type="StatementBlockSyntax" />
+      <Member Name="EndFunctionToken" Type="Token" TokenKinds="EndFunction,EndFn,EndSub" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="ReturnStatementSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="ReturnToken" Type="Token" TokenKinds="Return" />
+      <Member Name="ExpressionOpt" Type="BaseExpressionSyntax" IsOptional="true" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="ImportStatementSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="ImportToken" Type="Token" TokenKinds="Import" />
+      <Member Name="PathToken" Type="Token" TokenKinds="StringLiteral" />
+    </Members>
+  </SyntaxNode>
+
   <SyntaxNode Name="StatementBlockSyntax" Inherits="BaseStatementSyntax">
     <Members>
       <Member Name="Body" Type="BaseStatementSyntax" IsList="true" />

@@ -118,6 +118,14 @@ namespace SmallBasic.Compiler.Services
             addSnippet("Sub", "Sub ${1:name}", "EndSub");
             addSnippet("EndSub", "EndSub");
 
+            addSnippet("Function", "Function ${1:name}(${2:params})", "  Return ${3:result}", "EndFunction");
+            addSnippet("Fn", "Fn ${1:name}(${2:params})", "  Return ${3:result}", "EndFn");
+            addSnippet("EndFunction", "EndFunction");
+            addSnippet("EndFn", "EndFn");
+
+            addSnippet("Return", "Return ${1:expression}");
+            addSnippet("Import", "Import \"${1:file.sb}\"");
+
             return items.ToArray();
         }
     }

@@ -23,6 +23,18 @@ namespace SmallBasic.Compiler.Parsing
                 case SubModuleStatementSyntax subModuleStatement:
                     this.VisitSubModuleStatement(subModuleStatement);
                     break;
+                case ParameterSyntax parameter:
+                    this.VisitParameter(parameter);
+                    break;
+                case FunctionDeclarationSyntax functionDeclaration:
+                    this.VisitFunctionDeclaration(functionDeclaration);
+                    break;
+                case ReturnStatementSyntax returnStatement:
+                    this.VisitReturnStatement(returnStatement);
+                    break;
+                case ImportStatementSyntax importStatement:
+                    this.VisitImportStatement(importStatement);
+                    break;
                 case StatementBlockSyntax statementBlock:
                     this.VisitStatementBlock(statementBlock);
                     break;
@@ -101,6 +113,26 @@ namespace SmallBasic.Compiler.Parsing
         }
 
         private protected virtual void VisitSubModuleStatement(SubModuleStatementSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitParameter(ParameterSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitReturnStatement(ReturnStatementSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitImportStatement(ImportStatementSyntax node)
         {
             this.DefaultVisit(node);
         }
@@ -287,6 +319,239 @@ namespace SmallBasic.Compiler.Parsing
                 TextPosition calculateEnd()
                 {
                     return this.EndSubToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class ParameterSyntax : BaseSyntaxNode
+    {
+        public ParameterSyntax(Token identifierToken, Token commaTokenOpt)
+        {
+            Debug.Assert(!identifierToken.IsDefault(), "'identifierToken' must not be null.");
+            Debug.Assert(identifierToken.Kind == TokenKind.Identifier, "'identifierToken' must have a TokenKind of 'Identifier'.");
+            if (!commaTokenOpt.IsDefault())
+            {
+                Debug.Assert(commaTokenOpt.Kind == TokenKind.Comma, "'commaTokenOpt' must have a TokenKind of 'Comma'.");
+            }
+
+            this.IdentifierToken = identifierToken;
+            this.CommaTokenOpt = commaTokenOpt;
+        }
+
+        public Token IdentifierToken { get; private set; }
+
+        public Token CommaTokenOpt { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                return Enumerable.Empty<BaseSyntaxNode>();
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.IdentifierToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    if (!this.CommaTokenOpt.IsDefault())
+                    {
+                        return this.CommaTokenOpt.Range.End;
+                    }
+
+                    return this.IdentifierToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class FunctionDeclarationSyntax : BaseStatementSyntax
+    {
+        public FunctionDeclarationSyntax(Token functionToken, Token nameToken, Token leftParenTokenOpt, IReadOnlyList<ParameterSyntax> parameters, Token rightParenTokenOpt, StatementBlockSyntax body, Token endFunctionToken)
+        {
+            Debug.Assert(!functionToken.IsDefault(), "'functionToken' must not be null.");
+            Debug.Assert(functionToken.Kind == TokenKind.Function || functionToken.Kind == TokenKind.Fn || functionToken.Kind == TokenKind.Sub, "'functionToken' must have a TokenKind of 'Function,Fn,Sub'.");
+            Debug.Assert(!nameToken.IsDefault(), "'nameToken' must not be null.");
+            Debug.Assert(nameToken.Kind == TokenKind.Identifier, "'nameToken' must have a TokenKind of 'Identifier'.");
+            if (!leftParenTokenOpt.IsDefault())
+            {
+                Debug.Assert(leftParenTokenOpt.Kind == TokenKind.LeftParen, "'leftParenTokenOpt' must have a TokenKind of 'LeftParen'.");
+            }
+
+            Debug.Assert(!parameters.IsDefault(), "'parameters' must not be null.");
+            if (!rightParenTokenOpt.IsDefault())
+            {
+                Debug.Assert(rightParenTokenOpt.Kind == TokenKind.RightParen, "'rightParenTokenOpt' must have a TokenKind of 'RightParen'.");
+            }
+
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+            Debug.Assert(!endFunctionToken.IsDefault(), "'endFunctionToken' must not be null.");
+            Debug.Assert(endFunctionToken.Kind == TokenKind.EndFunction || endFunctionToken.Kind == TokenKind.EndFn || endFunctionToken.Kind == TokenKind.EndSub, "'endFunctionToken' must have a TokenKind of 'EndFunction,EndFn,EndSub'.");
+
+            this.FunctionToken = functionToken;
+            this.NameToken = nameToken;
+            this.LeftParenTokenOpt = leftParenTokenOpt;
+            this.Parameters = parameters;
+            foreach (var child in this.Parameters)
+            {
+                child.Parent = this;
+            }
+
+            this.RightParenTokenOpt = rightParenTokenOpt;
+            this.Body = body;
+            this.Body.Parent = this;
+            this.EndFunctionToken = endFunctionToken;
+        }
+
+        public Token FunctionToken { get; private set; }
+
+        public Token NameToken { get; private set; }
+
+        public Token LeftParenTokenOpt { get; private set; }
+
+        public IReadOnlyList<ParameterSyntax> Parameters { get; private set; }
+
+        public Token RightParenTokenOpt { get; private set; }
+
+        public StatementBlockSyntax Body { get; private set; }
+
+        public Token EndFunctionToken { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                foreach (var child in this.Parameters)
+                {
+                    yield return child;
+                }
+
+                yield return this.Body;
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.FunctionToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.EndFunctionToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class ReturnStatementSyntax : BaseStatementSyntax
+    {
+        public ReturnStatementSyntax(Token returnToken, BaseExpressionSyntax expressionOpt)
+        {
+            Debug.Assert(!returnToken.IsDefault(), "'returnToken' must not be null.");
+            Debug.Assert(returnToken.Kind == TokenKind.Return, "'returnToken' must have a TokenKind of 'Return'.");
+
+            this.ReturnToken = returnToken;
+            this.ExpressionOpt = expressionOpt;
+            if (!this.ExpressionOpt.IsDefault())
+            {
+                this.ExpressionOpt.Parent = this;
+            }
+        }
+
+        public Token ReturnToken { get; private set; }
+
+        public BaseExpressionSyntax ExpressionOpt { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                if (!this.ExpressionOpt.IsDefault())
+                {
+                    yield return this.ExpressionOpt;
+                }
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.ReturnToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    if (!this.ExpressionOpt.IsDefault())
+                    {
+                        return this.ExpressionOpt.Range.End;
+                    }
+
+                    return this.ReturnToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class ImportStatementSyntax : BaseStatementSyntax
+    {
+        public ImportStatementSyntax(Token importToken, Token pathToken)
+        {
+            Debug.Assert(!importToken.IsDefault(), "'importToken' must not be null.");
+            Debug.Assert(importToken.Kind == TokenKind.Import, "'importToken' must have a TokenKind of 'Import'.");
+            Debug.Assert(!pathToken.IsDefault(), "'pathToken' must not be null.");
+            Debug.Assert(pathToken.Kind == TokenKind.StringLiteral, "'pathToken' must have a TokenKind of 'StringLiteral'.");
+
+            this.ImportToken = importToken;
+            this.PathToken = pathToken;
+        }
+
+        public Token ImportToken { get; private set; }
+
+        public Token PathToken { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                return Enumerable.Empty<BaseSyntaxNode>();
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.ImportToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.PathToken.Range.End;
                 }
             }
         }

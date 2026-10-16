@@ -22,5 +22,10 @@ namespace SmallBasic.Compiler.Parsing
         {
             this.names.Add(node.NameToken.Text);
         }
+
+        private protected override void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
+        {
+            this.names.Add(node.NameToken.Text);
+        }
     }
 }

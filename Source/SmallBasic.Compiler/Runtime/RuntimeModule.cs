@@ -9,17 +9,20 @@ namespace SmallBasic.Compiler.Runtime
 
     public sealed class RuntimeModule
     {
-        internal RuntimeModule(string name, IReadOnlyList<BaseInstruction> instructions, StatementBlockSyntax syntax)
+        internal RuntimeModule(string name, IReadOnlyList<string> parameters, IReadOnlyList<BaseInstruction> instructions, BaseStatementSyntax syntax)
         {
             this.Name = name;
+            this.Parameters = parameters ?? System.Array.Empty<string>();
             this.Instructions = instructions;
             this.Syntax = syntax;
         }
 
         public string Name { get; private set; }
 
+        public IReadOnlyList<string> Parameters { get; private set; }
+
         internal IReadOnlyList<BaseInstruction> Instructions { get; private set; }
 
-        internal StatementBlockSyntax Syntax { get; private set; }
+        internal BaseStatementSyntax Syntax { get; private set; }
     }
 }

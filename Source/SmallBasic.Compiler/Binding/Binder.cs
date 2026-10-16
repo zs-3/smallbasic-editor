@@ -35,11 +35,29 @@ namespace SmallBasic.Compiler.Binding
                     case SubModuleStatementSyntax subModuleStatement:
                         {
                             var body = this.BindStatementBlock(subModuleStatement.Body);
-                            var subModule = new BoundSubModule(subModuleStatement, subModuleStatement.NameToken.Text, body);
+                            var subModule = new BoundSubModule(subModuleStatement, subModuleStatement.NameToken.Text, Array.Empty<string>(), body);
 
                             if (subModules.ContainsKey(subModule.Name))
                             {
                                 this.diagnostics.ReportTwoSubModulesWithTheSameName(subModuleStatement.NameToken.Range, subModule.Name);
+                            }
+                            else
+                            {
+                                subModules.Add(subModule.Name, subModule);
+                            }
+
+                            break;
+                        }
+
+                    case FunctionDeclarationSyntax functionDecl:
+                        {
+                            var parameters = functionDecl.Parameters.Select(p => p.IdentifierToken.Text).ToList();
+                            var body = this.BindStatementBlock(functionDecl.Body);
+                            var subModule = new BoundSubModule(functionDecl, functionDecl.NameToken.Text, parameters, body);
+
+                            if (subModules.ContainsKey(subModule.Name))
+                            {
+                                this.diagnostics.ReportTwoSubModulesWithTheSameName(functionDecl.NameToken.Range, subModule.Name);
                             }
                             else
                             {
@@ -91,6 +109,17 @@ namespace SmallBasic.Compiler.Binding
                 case WhileStatementSyntax whileStatement: return this.BindWhileStatement(whileStatement);
                 case ForStatementSyntax forStatement: return this.BindForStatement(forStatement);
                 case ExpressionStatementSyntax expressionStatement: return this.BindExpressionStatement(expressionStatement);
+
+                case ReturnStatementSyntax returnStatement:
+                    {
+                        BaseBoundExpression expr = null;
+                        if (!returnStatement.ExpressionOpt.IsDefault())
+                        {
+                            expr = this.BindExpression(returnStatement.ExpressionOpt);
+                        }
+
+                        return new BoundReturnStatement(returnStatement, hasExpression: expr != null, expressionOpt: expr);
+                    }
 
                 case LabelStatementSyntax labelStatement: return new BoundLabelStatement(labelStatement, labelStatement.LabelToken.Text);
                 case GoToStatementSyntax goToStatement: return new BoundGoToStatement(goToStatement, goToStatement.LabelToken.Text);
@@ -502,21 +531,16 @@ namespace SmallBasic.Compiler.Binding
 
                 case BoundSubModuleExpression subModule:
                     {
-                        if (!hasErrors)
+                        if (!hasErrors && this.SubModules.TryGetValue(subModule.Name, out var subModuleNode))
                         {
-                            if (arguments.Count != 0)
+                            if (arguments.Count != subModuleNode.Parameters.Count)
                             {
                                 hasErrors = true;
-                                this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, 0);
-                            }
-                            else if (expectsValue)
-                            {
-                                hasErrors = true;
-                                this.diagnostics.ReportExpectedExpressionWithAValue(syntax.Range);
+                                this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, subModuleNode.Parameters.Count);
                             }
                         }
 
-                        return new BoundSubModuleInvocationExpression(syntax, hasValue: false, hasErrors, subModule.Name);
+                        return new BoundSubModuleInvocationExpression(syntax, hasValue: expectsValue, hasErrors: hasErrors, name: subModule.Name, arguments: arguments);
                     }
 
                 default:

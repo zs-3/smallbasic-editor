@@ -3,7 +3,15 @@
   <BoundNode Name="BoundSubModule" Inherits="BaseBoundNode" Syntax="SubModuleStatementSyntax">
     <Members>
       <Member Name="Name" Type="string" />
+      <Member Name="Parameters" Type="string" IsList="true" />
       <Member Name="Body" Type="BoundStatementBlock" />
+    </Members>
+  </BoundNode>
+
+  <BoundNode Name="BoundReturnStatement" Inherits="BaseBoundStatement" Syntax="ReturnStatementSyntax">
+    <Members>
+      <Member Name="HasExpression" Type="bool" />
+      <Member Name="ExpressionOpt" Type="BaseBoundExpression" IsOptional="true" />
     </Members>
   </BoundNode>
   
@@ -171,6 +179,7 @@
   <BoundNode Name="BoundSubModuleInvocationExpression" Inherits="BaseBoundExpression" Syntax="InvocationExpressionSyntax">
     <Members>
       <Member Name="Name" Type="string" />
+      <Member Name="Arguments" Type="BaseBoundExpression" IsList="true" />
     </Members>
   </BoundNode>
   <BoundNode Name="BoundVariableExpression" Inherits="BaseBoundExpression" Syntax="IdentifierExpressionSyntax">
