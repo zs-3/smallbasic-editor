@@ -348,7 +348,7 @@ namespace SmallBasic.Compiler.Binding
 
     internal sealed class BoundSubModule : BaseBoundNode
     {
-        public BoundSubModule(SubModuleStatementSyntax syntax, string name, IReadOnlyList<string> parameters, BoundStatementBlock body)
+        public BoundSubModule(BaseStatementSyntax syntax, string name, IReadOnlyList<string> parameters, BoundStatementBlock body)
         {
             Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
             Debug.Assert(!name.IsDefault(), "'name' must not be null.");
@@ -361,7 +361,7 @@ namespace SmallBasic.Compiler.Binding
             this.Body = body;
         }
 
-        public SubModuleStatementSyntax Syntax { get; private set; }
+        public BaseStatementSyntax Syntax { get; private set; }
 
         public string Name { get; private set; }
 

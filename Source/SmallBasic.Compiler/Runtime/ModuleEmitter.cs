@@ -129,23 +129,47 @@ namespace SmallBasic.Compiler.Runtime
 
                 this.EmitExpression(statement.Expression);
                 this.EmitExpression(caseClause.ValueExpressionOpt);
-                this.instructions.Add(new EqualInstruction(statement.Syntax.Range));
-                this.instructions.Add(new TransientConditionalGoToInstruction(null, nextCaseLabel, statement.Syntax.Range));
+                TextRange range = caseClause.Syntax.Range;
+                if (range.Start.Line != range.End.Line)
+                {
+                    range = ((range.Start.Line, range.Start.Column), (range.Start.Line, range.Start.Column + 1));
+                }
+                this.instructions.Add(new EqualInstruction(range));
+                this.instructions.Add(new TransientConditionalGoToInstruction(null, nextCaseLabel, range));
 
                 this.EmitBlockStatement(caseClause.Body);
-                this.instructions.Add(new TransientUnconditionalGoToInstruction(endSelectLabel, statement.Syntax.Range));
-                this.instructions.Add(new TransientLabelInstruction(nextCaseLabel, statement.Syntax.Range));
+                TextRange stmtRange = statement.Syntax.Range;
+                if (stmtRange.Start.Line != stmtRange.End.Line)
+                {
+                    stmtRange = ((stmtRange.Start.Line, stmtRange.Start.Column), (stmtRange.Start.Line, stmtRange.Start.Column + 1));
+                }
+                this.instructions.Add(new TransientUnconditionalGoToInstruction(endSelectLabel, stmtRange));
+                this.instructions.Add(new TransientLabelInstruction(nextCaseLabel, stmtRange));
             }
 
-            this.instructions.Add(new TransientLabelInstruction(endSelectLabel, statement.Syntax.Range));
+            TextRange endRange = statement.Syntax.Range;
+            if (endRange.Start.Line != endRange.End.Line)
+            {
+                endRange = ((endRange.Start.Line, endRange.Start.Column), (endRange.Start.Line, endRange.Start.Column + 1));
+            }
+            this.instructions.Add(new TransientLabelInstruction(endSelectLabel, endRange));
         }
 
         private void EmitTryStatement(BoundTryStatement statement)
         {
+            // Execute try block; if no error, skip catch block and go to finally/end
+            string endTryLabel = this.GenerateJumpLabel();
+
             this.EmitBlockStatement(statement.Body);
 
             if (!statement.CatchClauseOpt.IsDefault())
             {
+                TextRange range = statement.Syntax.Range;
+                if (range.Start.Line != range.End.Line)
+                {
+                    range = ((range.Start.Line, range.Start.Column), (range.Start.Line, range.Start.Column + 1));
+                }
+                this.instructions.Add(new TransientUnconditionalGoToInstruction(endTryLabel, range));
                 this.EmitBlockStatement(statement.CatchClauseOpt.Body);
             }
 
@@ -153,6 +177,13 @@ namespace SmallBasic.Compiler.Runtime
             {
                 this.EmitBlockStatement(statement.FinallyClauseOpt.Body);
             }
+
+            TextRange endRange = statement.Syntax.Range;
+            if (endRange.Start.Line != endRange.End.Line)
+            {
+                endRange = ((endRange.Start.Line, endRange.Start.Column), (endRange.Start.Line, endRange.Start.Column + 1));
+            }
+            this.instructions.Add(new TransientLabelInstruction(endTryLabel, endRange));
         }
 
         private void EmitForStatement(BoundForStatement statement)
@@ -312,6 +343,7 @@ namespace SmallBasic.Compiler.Runtime
                 case BoundLibraryPropertyExpression libraryPropertyExpression: this.EmitLibraryPropertyExpression(libraryPropertyExpression); break;
                 case BoundLibraryMethodInvocationExpression libraryMethodInvocationExpression: this.EmitLibraryMethodInvocationExpression(libraryMethodInvocationExpression); break;
                 case BoundSubModuleInvocationExpression subModuleInvocationExpression: this.EmitSubModuleInvocationExpression(subModuleInvocationExpression); break;
+                case BoundSubModuleExpression subModuleExpression: this.instructions.Add(new PushValueInstruction(StringValue.Create(subModuleExpression.Name), subModuleExpression.Syntax.Range)); break;
                 case BoundVariableExpression variableExpression: this.EmitVariableExpression(variableExpression); break;
                 case BoundStringLiteralExpression stringLiteralExpression: this.EmitStringLiteralExpression(stringLiteralExpression); break;
                 case BoundNumberLiteralExpression numberLiteralExpression: this.EmitNumberLiteralExpression(numberLiteralExpression); break;

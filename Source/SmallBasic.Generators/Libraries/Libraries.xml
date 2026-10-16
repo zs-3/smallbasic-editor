@@ -520,26 +520,6 @@
           <Parameter Name="number" Type="NumberValue" />
         </Parameters>
       </Method>
-      <Method Name="Atan2" ReturnType="NumberValue">
-        <Parameters>
-          <Parameter Name="y" Type="NumberValue" />
-          <Parameter Name="x" Type="NumberValue" />
-        </Parameters>
-      </Method>
-      <Method Name="Clamp" ReturnType="NumberValue">
-        <Parameters>
-          <Parameter Name="value" Type="NumberValue" />
-          <Parameter Name="min" Type="NumberValue" />
-          <Parameter Name="max" Type="NumberValue" />
-        </Parameters>
-      </Method>
-      <Method Name="Lerp" ReturnType="NumberValue">
-        <Parameters>
-          <Parameter Name="start" Type="NumberValue" />
-          <Parameter Name="end" Type="NumberValue" />
-          <Parameter Name="amount" Type="NumberValue" />
-        </Parameters>
-      </Method>
       <Method Name="ArcCos" ReturnType="NumberValue">
         <Parameters>
           <Parameter Name="cosValue" Type="NumberValue" />
@@ -975,28 +955,6 @@
     <Events>
       <Event Name="Tick" />
     </Events>
-  </Library>
-  <Library Name="System" ExplorerIcon="cog">
-    <Methods>
-      <Method Name="Exists" ReturnType="BooleanValue">
-        <Parameters>
-          <Parameter Name="filePath" Type="StringValue" />
-        </Parameters>
-      </Method>
-      <Method Name="Call" ReturnType="BaseValue">
-        <Parameters>
-          <Parameter Name="typeName" Type="StringValue" />
-          <Parameter Name="methodName" Type="StringValue" />
-          <Parameter Name="arg1" Type="BaseValue" />
-        </Parameters>
-      </Method>
-      <Method Name="GetProperty" ReturnType="BaseValue">
-        <Parameters>
-          <Parameter Name="typeName" Type="StringValue" />
-          <Parameter Name="propertyName" Type="StringValue" />
-        </Parameters>
-      </Method>
-    </Methods>
   </Library>
   <Library Name="Turtle" ExplorerIcon="pen-alt" UsesGraphicsWindow="true">
     <Methods>

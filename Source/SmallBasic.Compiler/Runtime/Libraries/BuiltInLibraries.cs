@@ -29,79 +29,15 @@ namespace SmallBasic.Compiler.Runtime
         public IShapesLibrary Shapes => null;
         public ISoundLibrary Sound => null;
         public IStackLibrary Stack => null;
-        public ISystemLibrary System { get; } = new BuiltInSystemLibrary();
         public ITextLibrary Text { get; }
         public ITextWindowLibrary TextWindow => null;
         public ITimerLibrary Timer => null;
         public ITurtleLibrary Turtle => null;
 
-        private class BuiltInSystemLibrary : ISystemLibrary
-        {
-            public bool Exists(string filePath) => System.IO.File.Exists(filePath);
-
-            public BaseValue Call(string typeName, string methodName, BaseValue arg1)
-            {
-                try
-                {
-                    Type type = Type.GetType(typeName) ?? Type.GetType($"System.{typeName}") ?? typeof(System.Math);
-                    if (type != null)
-                    {
-                        var method = type.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.IgnoreCase);
-                        if (method != null)
-                        {
-                            object argVal = arg1.ToDisplayString();
-                            var paramsInfo = method.GetParameters();
-                            if (paramsInfo.Length == 1)
-                            {
-                                object converted = Convert.ChangeType(argVal, paramsInfo[0].ParameterType);
-                                object res = method.Invoke(null, new object[] { converted });
-                                return res is decimal d ? (BaseValue)new NumberValue(d) : StringValue.Create(res?.ToString() ?? "");
-                            }
-                            else if (paramsInfo.Length == 0)
-                            {
-                                object res = method.Invoke(null, null);
-                                return res is decimal d ? (BaseValue)new NumberValue(d) : StringValue.Create(res?.ToString() ?? "");
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                }
-
-                return StringValue.Empty;
-            }
-
-            public BaseValue GetProperty(string typeName, string propertyName)
-            {
-                try
-                {
-                    Type type = Type.GetType(typeName) ?? Type.GetType($"System.{typeName}") ?? typeof(System.Environment);
-                    if (type != null)
-                    {
-                        var prop = type.GetProperty(propertyName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.IgnoreCase);
-                        if (prop != null)
-                        {
-                            object res = prop.GetValue(null);
-                            return StringValue.Create(res?.ToString() ?? "");
-                        }
-                    }
-                }
-                catch
-                {
-                }
-
-                return StringValue.Empty;
-            }
-        }
-
         private class BuiltInMathLibrary : IMathLibrary
         {
             public decimal Get_Pi() => (decimal)System.Math.PI;
             public decimal Abs(decimal number) => System.Math.Abs(number);
-            public decimal Atan2(decimal y, decimal x) => (decimal)System.Math.Atan2((double)y, (double)x);
-            public decimal Clamp(decimal value, decimal min, decimal max) => System.Math.Max(min, System.Math.Min(max, value));
-            public decimal Lerp(decimal start, decimal end, decimal amount) => start + (end - start) * amount;
             public decimal Ceiling(decimal number) => System.Math.Ceiling(number);
             public decimal Floor(decimal number) => System.Math.Floor(number);
             public decimal NaturalLog(decimal number) => (decimal)System.Math.Log((double)number);
@@ -167,12 +103,17 @@ namespace SmallBasic.Compiler.Runtime
 
         private class BuiltInArrayLibrary : IArrayLibrary
         {
-            public bool ContainsIndex(ArrayValue array, string index) => array.ContainsIndex(index);
-            public bool ContainsValue(ArrayValue array, string value) => array.ContainsValue(value);
-            public ArrayValue GetAllIndices(ArrayValue array) => array.GetAllIndices();
-            public decimal GetItemCount(ArrayValue array) => array.GetItemCount();
+            public bool ContainsIndex(ArrayValue array, string index) => !array.IsDefault() && array.ContainsKey(index);
+            public bool ContainsValue(ArrayValue array, string value) => !array.IsDefault() && array.Values.Any(v => v.ToString() == value);
+            public ArrayValue GetAllIndices(ArrayValue array)
+            {
+                if (array.IsDefault()) return new ArrayValue();
+                int i = 1;
+                return new ArrayValue(array.Keys.Select(k => StringValue.Create(k)).ToDictionary(value => (i++).ToString(System.Globalization.CultureInfo.CurrentCulture)));
+            }
+            public decimal GetItemCount(ArrayValue array) => array.IsDefault() ? 0 : array.Count;
             public bool IsArray(BaseValue array) => array is ArrayValue;
-            public BaseValue GetValue(string arrayName, string index) => BaseValue.Empty;
+            public BaseValue GetValue(string arrayName, string index) => StringValue.Empty;
             public void SetValue(string arrayName, string index, BaseValue value) { }
             public void RemoveValue(string arrayName, string index) { }
         }

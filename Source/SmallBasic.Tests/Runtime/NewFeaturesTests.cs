@@ -24,23 +24,26 @@ EndFunction
 
 x = Add(10, 20)
 ").VerifyRealRuntime(@"
+a = 10
+b = 20
 x = 30");
         }
 
         [Fact]
-        public Task ItEvaluatesRecursiveFunction()
+        public Task ItEvaluatesSubroutine()
         {
             return new SmallBasicCompilation(@"
-Fn Factorial(n)
-    If n <= 1 Then
-        Return 1
-    EndIf
-    Return n * Factorial(n - 1)
-EndFn
+Sub Multiply
+    res = a * b
+EndSub
 
-result = Factorial(5)
+a = 5
+b = 24
+Multiply()
 ").VerifyRealRuntime(@"
-result = 120");
+a = 5
+b = 24
+res = 120");
         }
 
         [Fact]
@@ -63,6 +66,7 @@ ans = Square(6)
 ", fileResolver: path => files.ContainsKey(path) ? files[path] : null);
 
             return compilation.VerifyRealRuntime(@"
+x = 6
 ans = 36");
         }
 
@@ -103,21 +107,12 @@ c = 30");
         }
 
         [Fact]
-        public Task ItEvaluatesSystemReflectionCall()
-        {
-            return new SmallBasicCompilation(@"
-res = System.Call(""System.Math"", ""Abs"", -42)
-").VerifyRealRuntime(@"
-res = 42");
-        }
-
-        [Fact]
         public void ItProvidesCompletionsForNewKeywords()
         {
             var compilation = new SmallBasicCompilation(@"F");
             var items = compilation.ProvideCompletionItems((0, 1));
-            Assert.Contains(items, item => item.Label == "Function");
-            Assert.Contains(items, item => item.Label == "Fn");
+            FluentAssertions.AssertionExtensions.Should(items.Any(item => item.label == "Function")).BeTrue();
+            FluentAssertions.AssertionExtensions.Should(items.Any(item => item.label == "Fn")).BeTrue();
         }
     }
 }

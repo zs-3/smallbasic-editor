@@ -15,7 +15,6 @@ namespace SmallBasic.Tests
     using SmallBasic.Compiler.Binding;
     using SmallBasic.Compiler.Diagnostics;
     using SmallBasic.Compiler.Runtime;
-    using SmallBasic.Tests.Libraries;
     using SmallBasic.Utilities;
 
     internal static class TestExtensions
@@ -34,7 +33,7 @@ namespace SmallBasic.Tests
         {
             compilation.VerifyDiagnostics();
 
-            SmallBasicEngine engine = new SmallBasicEngine(compilation, new SmallBasic.Compiler.Runtime.Libraries.BuiltInLibraries());
+            SmallBasicEngine engine = new SmallBasicEngine(compilation, new BuiltInLibraries());
             engine.Mode = mode;
             await engine.Execute().ConfigureAwait(false);
             engine.State.Should().Be(executionState);
@@ -44,13 +43,13 @@ namespace SmallBasic.Tests
 
         public static Task<SmallBasicEngine> VerifyRealRuntime(this SmallBasicCompilation compilation, string memoryContents = default)
         {
-            return VerifyRuntimeAux(compilation, new SmallBasic.Compiler.Runtime.Libraries.BuiltInLibraries(), memoryContents);
+            return VerifyRuntimeAux(compilation, new BuiltInLibraries(), memoryContents);
         }
 
         public static async Task<SmallBasicEngine> VerifyLoggingRuntime(this SmallBasicCompilation compilation, string expectedLog = default, string memoryContents = default)
         {
             StringBuilder log = new StringBuilder();
-            var engine = await VerifyRuntimeAux(compilation, new SmallBasic.Compiler.Runtime.Libraries.BuiltInLibraries(), memoryContents).ConfigureAwait(false);
+            var engine = await VerifyRuntimeAux(compilation, new LoggingEngineLibraries(log), memoryContents).ConfigureAwait(false);
 
             if (!expectedLog.IsDefault())
             {

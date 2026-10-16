@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <BoundNode Name="BoundSubModule" Inherits="BaseBoundNode" Syntax="SubModuleStatementSyntax">
+  <BoundNode Name="BoundSubModule" Inherits="BaseBoundNode" Syntax="BaseStatementSyntax">
     <Members>
       <Member Name="Name" Type="string" />
       <Member Name="Parameters" Type="string" IsList="true" />

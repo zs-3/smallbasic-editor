@@ -28,6 +28,7 @@ namespace SmallBasic.Compiler.Binding
             var mainModule = new List<BaseBoundStatement>();
             var subModules = new Dictionary<string, BoundSubModule>();
 
+            // First pass: collect submodules and functions
             foreach (var syntax in syntaxTree.Body)
             {
                 switch (syntax)
@@ -66,24 +67,26 @@ namespace SmallBasic.Compiler.Binding
 
                             break;
                         }
+                }
+            }
 
-                    default:
-                        {
-                            var statement = this.BindStatementOpt(syntax);
-                            if (!statement.IsDefault())
-                            {
-                                mainModule.Add(statement);
-                            }
+            this.SubModules = subModules;
 
-                            break;
-                        }
+            // Second pass: bind main module statements
+            foreach (var syntax in syntaxTree.Body)
+            {
+                if (!(syntax is SubModuleStatementSyntax) && !(syntax is FunctionDeclarationSyntax))
+                {
+                    var statement = this.BindStatementOpt(syntax);
+                    if (!statement.IsDefault())
+                    {
+                        mainModule.Add(statement);
+                    }
                 }
             }
 
             this.MainModule = new BoundStatementBlock(syntaxTree, mainModule);
             this.CheckForLabelErrors(this.MainModule);
-
-            this.SubModules = subModules;
             foreach (var subModule in this.SubModules.Values)
             {
                 this.CheckForLabelErrors(subModule.Body);
@@ -582,13 +585,16 @@ namespace SmallBasic.Compiler.Binding
 
                 case BoundSubModuleExpression subModule:
                     {
-                        if (!hasErrors && this.SubModules.TryGetValue(subModule.Name, out var subModuleNode))
+                        int expectedParams = 0;
+                        if (!this.SubModules.IsDefault() && this.SubModules.TryGetValue(subModule.Name, out var subModuleNode))
                         {
-                            if (arguments.Count != subModuleNode.Parameters.Count)
-                            {
-                                hasErrors = true;
-                                this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, subModuleNode.Parameters.Count);
-                            }
+                            expectedParams = subModuleNode.Parameters.Count;
+                        }
+
+                        if (!hasErrors && arguments.Count != expectedParams)
+                        {
+                            hasErrors = true;
+                            this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, expectedParams);
                         }
 
                         return new BoundSubModuleInvocationExpression(syntax, hasValue: expectsValue, hasErrors: hasErrors, name: subModule.Name, arguments: arguments);
@@ -619,12 +625,7 @@ namespace SmallBasic.Compiler.Binding
             }
             else if (this.definedSubModules.Contains(name))
             {
-                if (expectsValue)
-                {
-                    return new BoundVariableExpression(syntax, hasValue: true, hasErrors, name);
-                }
-
-                return new BoundSubModuleExpression(syntax, hasValue: false, hasErrors, name);
+                return new BoundSubModuleExpression(syntax, hasValue: false, hasErrors: hasErrors, name: name);
             }
             else
             {
