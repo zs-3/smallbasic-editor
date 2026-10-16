@@ -211,6 +211,15 @@ namespace SmallBasic.Compiler.Scanning
                 case "endfn": this.AddToken(word, TokenKind.EndFn); return;
                 case "return": this.AddToken(word, TokenKind.Return); return;
                 case "import": this.AddToken(word, TokenKind.Import); return;
+                case "foreach": this.AddToken(word, TokenKind.ForEach); return;
+                case "in": this.AddToken(word, TokenKind.In); return;
+                case "select": this.AddToken(word, TokenKind.Select); return;
+                case "case": this.AddToken(word, TokenKind.Case); return;
+                case "endselect": this.AddToken(word, TokenKind.EndSelect); return;
+                case "try": this.AddToken(word, TokenKind.Try); return;
+                case "catch": this.AddToken(word, TokenKind.Catch); return;
+                case "finally": this.AddToken(word, TokenKind.Finally); return;
+                case "endtry": this.AddToken(word, TokenKind.EndTry); return;
                 case "or": this.AddToken(word, TokenKind.Or); return;
                 case "and": this.AddToken(word, TokenKind.And); return;
                 default: this.AddToken(word, TokenKind.Identifier); return;

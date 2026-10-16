@@ -439,6 +439,13 @@ namespace SmallBasic.Compiler.Runtime
         void Resume();
     }
 
+    public interface ISystemLibrary
+    {
+        BaseValue Call(string typeName, string methodName, BaseValue arg1);
+
+        BaseValue GetProperty(string typeName, string propertyName);
+    }
+
     public interface ITurtleLibrary
     {
         decimal Get_Angle();
@@ -515,6 +522,8 @@ namespace SmallBasic.Compiler.Runtime
         ITextWindowLibrary TextWindow { get; }
 
         ITimerLibrary Timer { get; }
+
+        ISystemLibrary System { get; }
 
         ITurtleLibrary Turtle { get; }
     }

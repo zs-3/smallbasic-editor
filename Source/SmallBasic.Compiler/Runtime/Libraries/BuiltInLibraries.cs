@@ -29,10 +29,69 @@ namespace SmallBasic.Compiler.Runtime
         public IShapesLibrary Shapes => null;
         public ISoundLibrary Sound => null;
         public IStackLibrary Stack => null;
+        public ISystemLibrary System { get; } = new BuiltInSystemLibrary();
         public ITextLibrary Text { get; }
         public ITextWindowLibrary TextWindow => null;
         public ITimerLibrary Timer => null;
         public ITurtleLibrary Turtle => null;
+
+        private class BuiltInSystemLibrary : ISystemLibrary
+        {
+            public BaseValue Call(string typeName, string methodName, BaseValue arg1)
+            {
+                try
+                {
+                    Type type = Type.GetType(typeName) ?? Type.GetType($"System.{typeName}") ?? typeof(System.Math);
+                    if (type != null)
+                    {
+                        var method = type.GetMethod(methodName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.IgnoreCase);
+                        if (method != null)
+                        {
+                            object argVal = arg1.ToDisplayString();
+                            var paramsInfo = method.GetParameters();
+                            if (paramsInfo.Length == 1)
+                            {
+                                object converted = Convert.ChangeType(argVal, paramsInfo[0].ParameterType);
+                                object res = method.Invoke(null, new object[] { converted });
+                                return res is decimal d ? (BaseValue)new NumberValue(d) : StringValue.Create(res?.ToString() ?? "");
+                            }
+                            else if (paramsInfo.Length == 0)
+                            {
+                                object res = method.Invoke(null, null);
+                                return res is decimal d ? (BaseValue)new NumberValue(d) : StringValue.Create(res?.ToString() ?? "");
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                }
+
+                return StringValue.Empty;
+            }
+
+            public BaseValue GetProperty(string typeName, string propertyName)
+            {
+                try
+                {
+                    Type type = Type.GetType(typeName) ?? Type.GetType($"System.{typeName}") ?? typeof(System.Environment);
+                    if (type != null)
+                    {
+                        var prop = type.GetProperty(propertyName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.IgnoreCase);
+                        if (prop != null)
+                        {
+                            object res = prop.GetValue(null);
+                            return StringValue.Create(res?.ToString() ?? "");
+                        }
+                    }
+                }
+                catch
+                {
+                }
+
+                return StringValue.Empty;
+            }
+        }
 
         private class BuiltInMathLibrary : IMathLibrary
         {

@@ -956,6 +956,23 @@
       <Event Name="Tick" />
     </Events>
   </Library>
+  <Library Name="System" ExplorerIcon="cog">
+    <Methods>
+      <Method Name="Call" ReturnType="BaseValue">
+        <Parameters>
+          <Parameter Name="typeName" Type="StringValue" />
+          <Parameter Name="methodName" Type="StringValue" />
+          <Parameter Name="arg1" Type="BaseValue" />
+        </Parameters>
+      </Method>
+      <Method Name="GetProperty" ReturnType="BaseValue">
+        <Parameters>
+          <Parameter Name="typeName" Type="StringValue" />
+          <Parameter Name="propertyName" Type="StringValue" />
+        </Parameters>
+      </Method>
+    </Methods>
+  </Library>
   <Library Name="Turtle" ExplorerIcon="pen-alt" UsesGraphicsWindow="true">
     <Methods>
       <Method Name="Hide" />

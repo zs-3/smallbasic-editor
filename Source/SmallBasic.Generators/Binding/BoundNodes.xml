@@ -65,6 +65,47 @@
     </Members>
   </BoundNode>
 
+  <BoundNode Name="BoundForEachStatement" Inherits="BaseBoundStatement" Syntax="ForEachStatementSyntax">
+    <Members>
+      <Member Name="Identifier" Type="string"/>
+      <Member Name="Collection" Type="BaseBoundExpression" />
+      <Member Name="Body" Type="BoundStatementBlock" />
+    </Members>
+  </BoundNode>
+
+  <BoundNode Name="BoundCaseClause" Inherits="BaseBoundNode" Syntax="CaseClauseSyntax">
+    <Members>
+      <Member Name="IsElse" Type="bool" />
+      <Member Name="ValueExpressionOpt" Type="BaseBoundExpression" IsOptional="true" />
+      <Member Name="Body" Type="BoundStatementBlock" />
+    </Members>
+  </BoundNode>
+  <BoundNode Name="BoundSelectStatement" Inherits="BaseBoundStatement" Syntax="SelectStatementSyntax">
+    <Members>
+      <Member Name="Expression" Type="BaseBoundExpression" />
+      <Member Name="Cases" Type="BoundCaseClause" IsList="true" />
+    </Members>
+  </BoundNode>
+
+  <BoundNode Name="BoundCatchClause" Inherits="BaseBoundNode" Syntax="CatchClauseSyntax">
+    <Members>
+      <Member Name="VariableOpt" Type="string" IsOptional="true" />
+      <Member Name="Body" Type="BoundStatementBlock" />
+    </Members>
+  </BoundNode>
+  <BoundNode Name="BoundFinallyClause" Inherits="BaseBoundNode" Syntax="FinallyClauseSyntax">
+    <Members>
+      <Member Name="Body" Type="BoundStatementBlock" />
+    </Members>
+  </BoundNode>
+  <BoundNode Name="BoundTryStatement" Inherits="BaseBoundStatement" Syntax="TryStatementSyntax">
+    <Members>
+      <Member Name="Body" Type="BoundStatementBlock" />
+      <Member Name="CatchClauseOpt" Type="BoundCatchClause" IsOptional="true" />
+      <Member Name="FinallyClauseOpt" Type="BoundFinallyClause" IsOptional="true" />
+    </Members>
+  </BoundNode>
+
   <BoundNode Name="BoundLabelStatement" Inherits="BaseBoundStatement" Syntax="LabelStatementSyntax">
     <Members>
       <Member Name="Label" Type="string"/>

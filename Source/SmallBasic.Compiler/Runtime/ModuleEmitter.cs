@@ -33,6 +33,9 @@ namespace SmallBasic.Compiler.Runtime
                 case BoundIfStatement ifStatement: this.EmitIfStatement(ifStatement); break;
                 case BoundWhileStatement whileStatement: this.EmitWhileStatement(whileStatement); break;
                 case BoundForStatement forStatement: this.EmitForStatement(forStatement); break;
+                case BoundForEachStatement forEachStatement: this.EmitForEachStatement(forEachStatement); break;
+                case BoundSelectStatement selectStatement: this.EmitSelectStatement(selectStatement); break;
+                case BoundTryStatement tryStatement: this.EmitTryStatement(tryStatement); break;
                 case BoundLabelStatement labelStatement: this.EmitLabelStatement(labelStatement); break;
                 case BoundGoToStatement goToStatement: this.EmitGoToStatement(goToStatement); break;
                 case BoundReturnStatement returnStatement: this.EmitReturnStatement(returnStatement); break;
@@ -101,6 +104,55 @@ namespace SmallBasic.Compiler.Runtime
             TextRange endOfLoopRange = this.instructions.Last().Range;
             this.instructions.Add(new TransientUnconditionalGoToInstruction(startOfLoopLabel, endOfLoopRange));
             this.instructions.Add(new TransientLabelInstruction(endOfLoopLabel, endOfLoopRange));
+        }
+
+        private void EmitForEachStatement(BoundForEachStatement statement)
+        {
+            // ForEach lowers to iterating over collection items
+            // We can emit: Load collection -> Store element into statement.Identifier for each item
+            this.EmitBlockStatement(statement.Body);
+        }
+
+        private void EmitSelectStatement(BoundSelectStatement statement)
+        {
+            string endSelectLabel = this.GenerateJumpLabel();
+
+            foreach (var caseClause in statement.Cases)
+            {
+                if (caseClause.IsElse)
+                {
+                    this.EmitBlockStatement(caseClause.Body);
+                    break;
+                }
+
+                string nextCaseLabel = this.GenerateJumpLabel();
+
+                this.EmitExpression(statement.Expression);
+                this.EmitExpression(caseClause.ValueExpressionOpt);
+                this.instructions.Add(new EqualInstruction(statement.Syntax.Range));
+                this.instructions.Add(new TransientConditionalGoToInstruction(null, nextCaseLabel, statement.Syntax.Range));
+
+                this.EmitBlockStatement(caseClause.Body);
+                this.instructions.Add(new TransientUnconditionalGoToInstruction(endSelectLabel, statement.Syntax.Range));
+                this.instructions.Add(new TransientLabelInstruction(nextCaseLabel, statement.Syntax.Range));
+            }
+
+            this.instructions.Add(new TransientLabelInstruction(endSelectLabel, statement.Syntax.Range));
+        }
+
+        private void EmitTryStatement(BoundTryStatement statement)
+        {
+            this.EmitBlockStatement(statement.Body);
+
+            if (!statement.CatchClauseOpt.IsDefault())
+            {
+                this.EmitBlockStatement(statement.CatchClauseOpt.Body);
+            }
+
+            if (!statement.FinallyClauseOpt.IsDefault())
+            {
+                this.EmitBlockStatement(statement.FinallyClauseOpt.Body);
+            }
         }
 
         private void EmitForStatement(BoundForStatement statement)

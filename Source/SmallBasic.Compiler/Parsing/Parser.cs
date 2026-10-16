@@ -150,8 +150,14 @@ namespace SmallBasic.Compiler.Parsing
                     return this.ParseIfStatement();
                 case TokenKind.For:
                     return this.ParseForStatement();
+                case TokenKind.ForEach:
+                    return this.ParseForEachStatement();
                 case TokenKind.While:
                     return this.ParseWhileStatement();
+                case TokenKind.Select:
+                    return this.ParseSelectStatement();
+                case TokenKind.Try:
+                    return this.ParseTryStatement();
 
                 case TokenKind.Identifier:
                     if (this.index + 1 < this.tokens.Count && this.tokens[this.index + 1].Kind == TokenKind.Colon)
@@ -273,6 +279,89 @@ namespace SmallBasic.Compiler.Parsing
             this.RunToEndOfLine();
 
             return new ForStatementSyntax(forToken, identifierToken, equalToken, fromExpression, toToken, toExpression, stepClauseOpt, statements, endForToken);
+        }
+
+        private ForEachStatementSyntax ParseForEachStatement()
+        {
+            var forEachToken = this.Eat(TokenKind.ForEach);
+            var identifierToken = this.Eat(TokenKind.Identifier);
+            var inToken = this.Eat(TokenKind.In);
+            var collectionExpr = this.ParseBaseExpression();
+            this.RunToEndOfLine();
+
+            var statements = this.ParseStatementsExcept(TokenKind.EndFor);
+            var endForToken = this.Eat(TokenKind.EndFor);
+            this.RunToEndOfLine();
+
+            return new ForEachStatementSyntax(forEachToken, identifierToken, inToken, collectionExpr, statements, endForToken);
+        }
+
+        private SelectStatementSyntax ParseSelectStatement()
+        {
+            var selectToken = this.Eat(TokenKind.Select);
+            if (this.Peek() == TokenKind.Case)
+            {
+                this.Eat(TokenKind.Case);
+            }
+            var expression = this.ParseBaseExpression();
+            this.RunToEndOfLine();
+
+            var cases = new List<CaseClauseSyntax>();
+            while (this.index < this.tokens.Count && (this.Peek() == TokenKind.Case || this.Peek() == TokenKind.Else))
+            {
+                var caseToken = this.Eat(this.Peek());
+                BaseExpressionSyntax valExprOpt = null;
+                if (caseToken.Kind == TokenKind.Case)
+                {
+                    valExprOpt = this.ParseBaseExpression();
+                }
+
+                this.RunToEndOfLine();
+                var statements = this.ParseStatementsExcept(TokenKind.Case, TokenKind.Else, TokenKind.EndSelect);
+                cases.Add(new CaseClauseSyntax(caseToken, valExprOpt, statements));
+            }
+
+            var endSelectToken = this.Eat(TokenKind.EndSelect);
+            this.RunToEndOfLine();
+
+            return new SelectStatementSyntax(selectToken, expression, cases, endSelectToken);
+        }
+
+        private TryStatementSyntax ParseTryStatement()
+        {
+            var tryToken = this.Eat(TokenKind.Try);
+            this.RunToEndOfLine();
+
+            var body = this.ParseStatementsExcept(TokenKind.Catch, TokenKind.Finally, TokenKind.EndTry);
+
+            CatchClauseSyntax catchClauseOpt = null;
+            if (this.index < this.tokens.Count && this.Peek() == TokenKind.Catch)
+            {
+                var catchToken = this.Eat(TokenKind.Catch);
+                Token varTokenOpt = null;
+                if (this.index < this.tokens.Count && this.Peek() == TokenKind.Identifier)
+                {
+                    varTokenOpt = this.Eat(TokenKind.Identifier);
+                }
+
+                this.RunToEndOfLine();
+                var catchBody = this.ParseStatementsExcept(TokenKind.Finally, TokenKind.EndTry);
+                catchClauseOpt = new CatchClauseSyntax(catchToken, varTokenOpt, catchBody);
+            }
+
+            FinallyClauseSyntax finallyClauseOpt = null;
+            if (this.index < this.tokens.Count && this.Peek() == TokenKind.Finally)
+            {
+                var finallyToken = this.Eat(TokenKind.Finally);
+                this.RunToEndOfLine();
+                var finallyBody = this.ParseStatementsExcept(TokenKind.EndTry);
+                finallyClauseOpt = new FinallyClauseSyntax(finallyToken, finallyBody);
+            }
+
+            var endTryToken = this.Eat(TokenKind.EndTry);
+            this.RunToEndOfLine();
+
+            return new TryStatementSyntax(tryToken, body, catchClauseOpt, finallyClauseOpt, endTryToken);
         }
 
         private WhileStatementSyntax ParseWhileStatement()

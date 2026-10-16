@@ -108,6 +108,9 @@ namespace SmallBasic.Compiler.Binding
                 case IfStatementSyntax ifStatement: return this.BindIfStatement(ifStatement);
                 case WhileStatementSyntax whileStatement: return this.BindWhileStatement(whileStatement);
                 case ForStatementSyntax forStatement: return this.BindForStatement(forStatement);
+                case ForEachStatementSyntax forEachStatement: return this.BindForEachStatement(forEachStatement);
+                case SelectStatementSyntax selectStatement: return this.BindSelectStatement(selectStatement);
+                case TryStatementSyntax tryStatement: return this.BindTryStatement(tryStatement);
                 case ExpressionStatementSyntax expressionStatement: return this.BindExpressionStatement(expressionStatement);
 
                 case ReturnStatementSyntax returnStatement:
@@ -178,6 +181,54 @@ namespace SmallBasic.Compiler.Binding
             BoundStatementBlock body = this.BindStatementBlock(syntax.Body);
 
             return new BoundWhileStatement(syntax, expression, body);
+        }
+
+        private BoundForEachStatement BindForEachStatement(ForEachStatementSyntax syntax)
+        {
+            string identifier = syntax.IdentifierToken.Text;
+            BaseBoundExpression collection = this.BindExpression(syntax.CollectionExpression);
+            BoundStatementBlock body = this.BindStatementBlock(syntax.Body);
+            return new BoundForEachStatement(syntax, identifier, collection, body);
+        }
+
+        private BoundSelectStatement BindSelectStatement(SelectStatementSyntax syntax)
+        {
+            BaseBoundExpression expression = this.BindExpression(syntax.Expression);
+            var cases = new List<BoundCaseClause>();
+            foreach (var clause in syntax.Cases)
+            {
+                BaseBoundExpression valExprOpt = null;
+                if (!clause.ValueExpressionOpt.IsDefault())
+                {
+                    valExprOpt = this.BindExpression(clause.ValueExpressionOpt);
+                }
+
+                BoundStatementBlock body = this.BindStatementBlock(clause.Body);
+                cases.Add(new BoundCaseClause(clause, isElse: clause.CaseToken.Kind == TokenKind.Else, valueExpressionOpt: valExprOpt, body: body));
+            }
+
+            return new BoundSelectStatement(syntax, expression, cases);
+        }
+
+        private BoundTryStatement BindTryStatement(TryStatementSyntax syntax)
+        {
+            BoundStatementBlock body = this.BindStatementBlock(syntax.Body);
+            BoundCatchClause catchClauseOpt = null;
+            if (!syntax.CatchClauseOpt.IsDefault())
+            {
+                string varName = syntax.CatchClauseOpt.VariableTokenOpt.IsDefault() ? null : syntax.CatchClauseOpt.VariableTokenOpt.Text;
+                BoundStatementBlock catchBody = this.BindStatementBlock(syntax.CatchClauseOpt.Body);
+                catchClauseOpt = new BoundCatchClause(syntax.CatchClauseOpt, varName, catchBody);
+            }
+
+            BoundFinallyClause finallyClauseOpt = null;
+            if (!syntax.FinallyClauseOpt.IsDefault())
+            {
+                BoundStatementBlock finallyBody = this.BindStatementBlock(syntax.FinallyClauseOpt.Body);
+                finallyClauseOpt = new BoundFinallyClause(syntax.FinallyClauseOpt, finallyBody);
+            }
+
+            return new BoundTryStatement(syntax, body, catchClauseOpt, finallyClauseOpt);
         }
 
         private BoundForStatement BindForStatement(ForStatementSyntax syntax)

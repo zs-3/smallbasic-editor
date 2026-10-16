@@ -1217,6 +1217,28 @@ namespace SmallBasic.Tests
         }
     }
 
+    internal sealed class LoggingSystemLibrary : ISystemLibrary
+    {
+        private readonly StringBuilder log;
+
+        public LoggingSystemLibrary(StringBuilder log)
+        {
+            this.log = log;
+        }
+
+        public BaseValue Call(string typeName, string methodName, BaseValue arg1)
+        {
+            this.log.AppendLine($"System.Call(typeName: '{typeName}', methodName: '{methodName}', arg1: '{arg1.ToDisplayString()}')");
+            return StringValue.Create(string.Empty);
+        }
+
+        public BaseValue GetProperty(string typeName, string propertyName)
+        {
+            this.log.AppendLine($"System.GetProperty(typeName: '{typeName}', propertyName: '{propertyName}')");
+            return StringValue.Create(string.Empty);
+        }
+    }
+
     internal sealed class LoggingTurtleLibrary : ITurtleLibrary
     {
         private readonly StringBuilder log;
@@ -1344,6 +1366,7 @@ namespace SmallBasic.Tests
             this.Text = new LoggingTextLibrary(log);
             this.TextWindow = new LoggingTextWindowLibrary(log);
             this.Timer = new LoggingTimerLibrary(log);
+            this.System = new LoggingSystemLibrary(log);
             this.Turtle = new LoggingTurtleLibrary(log);
         }
 
@@ -1384,6 +1407,8 @@ namespace SmallBasic.Tests
         public ITextWindowLibrary TextWindow { get; private set; }
 
         public ITimerLibrary Timer { get; private set; }
+
+        public ISystemLibrary System { get; private set; }
 
         public ITurtleLibrary Turtle { get; private set; }
     }

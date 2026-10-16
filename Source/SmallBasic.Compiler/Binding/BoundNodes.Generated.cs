@@ -47,6 +47,24 @@ namespace SmallBasic.Compiler.Binding
                 case BoundForStatement forStatement:
                     this.VisitForStatement(forStatement);
                     break;
+                case BoundForEachStatement forEachStatement:
+                    this.VisitForEachStatement(forEachStatement);
+                    break;
+                case BoundCaseClause caseClause:
+                    this.VisitCaseClause(caseClause);
+                    break;
+                case BoundSelectStatement selectStatement:
+                    this.VisitSelectStatement(selectStatement);
+                    break;
+                case BoundCatchClause catchClause:
+                    this.VisitCatchClause(catchClause);
+                    break;
+                case BoundFinallyClause finallyClause:
+                    this.VisitFinallyClause(finallyClause);
+                    break;
+                case BoundTryStatement tryStatement:
+                    this.VisitTryStatement(tryStatement);
+                    break;
                 case BoundLabelStatement labelStatement:
                     this.VisitLabelStatement(labelStatement);
                     break;
@@ -165,6 +183,36 @@ namespace SmallBasic.Compiler.Binding
         }
 
         private protected virtual void VisitForStatement(BoundForStatement node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitForEachStatement(BoundForEachStatement node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitCaseClause(BoundCaseClause node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitSelectStatement(BoundSelectStatement node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitCatchClause(BoundCatchClause node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitFinallyClause(BoundFinallyClause node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitTryStatement(BoundTryStatement node)
         {
             this.DefaultVisit(node);
         }
@@ -584,6 +632,197 @@ namespace SmallBasic.Compiler.Binding
                 }
 
                 yield return this.Body;
+            }
+        }
+    }
+
+    internal sealed class BoundForEachStatement : BaseBoundStatement
+    {
+        public BoundForEachStatement(ForEachStatementSyntax syntax, string identifier, BaseBoundExpression collection, BoundStatementBlock body)
+        {
+            Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
+            Debug.Assert(!identifier.IsDefault(), "'identifier' must not be null.");
+            Debug.Assert(!collection.IsDefault(), "'collection' must not be null.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.Syntax = syntax;
+            this.Identifier = identifier;
+            this.Collection = collection;
+            this.Body = body;
+        }
+
+        public ForEachStatementSyntax Syntax { get; private set; }
+
+        public string Identifier { get; private set; }
+
+        public BaseBoundExpression Collection { get; private set; }
+
+        public BoundStatementBlock Body { get; private set; }
+
+        public override IEnumerable<BaseBoundNode> Children
+        {
+            get
+            {
+                yield return this.Collection;
+                yield return this.Body;
+            }
+        }
+    }
+
+    internal sealed class BoundCaseClause : BaseBoundNode
+    {
+        public BoundCaseClause(CaseClauseSyntax syntax, bool isElse, BaseBoundExpression valueExpressionOpt, BoundStatementBlock body)
+        {
+            Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
+            Debug.Assert(!isElse.IsDefault(), "'isElse' must not be null.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.Syntax = syntax;
+            this.IsElse = isElse;
+            this.ValueExpressionOpt = valueExpressionOpt;
+            this.Body = body;
+        }
+
+        public CaseClauseSyntax Syntax { get; private set; }
+
+        public bool IsElse { get; private set; }
+
+        public BaseBoundExpression ValueExpressionOpt { get; private set; }
+
+        public BoundStatementBlock Body { get; private set; }
+
+        public override IEnumerable<BaseBoundNode> Children
+        {
+            get
+            {
+                if (!this.ValueExpressionOpt.IsDefault())
+                {
+                    yield return this.ValueExpressionOpt;
+                }
+
+                yield return this.Body;
+            }
+        }
+    }
+
+    internal sealed class BoundSelectStatement : BaseBoundStatement
+    {
+        public BoundSelectStatement(SelectStatementSyntax syntax, BaseBoundExpression expression, IReadOnlyList<BoundCaseClause> cases)
+        {
+            Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
+            Debug.Assert(!expression.IsDefault(), "'expression' must not be null.");
+            Debug.Assert(!cases.IsDefault(), "'cases' must not be null.");
+
+            this.Syntax = syntax;
+            this.Expression = expression;
+            this.Cases = cases;
+        }
+
+        public SelectStatementSyntax Syntax { get; private set; }
+
+        public BaseBoundExpression Expression { get; private set; }
+
+        public IReadOnlyList<BoundCaseClause> Cases { get; private set; }
+
+        public override IEnumerable<BaseBoundNode> Children
+        {
+            get
+            {
+                yield return this.Expression;
+                foreach (var child in this.Cases)
+                {
+                    yield return child;
+                }
+            }
+        }
+    }
+
+    internal sealed class BoundCatchClause : BaseBoundNode
+    {
+        public BoundCatchClause(CatchClauseSyntax syntax, string variableOpt, BoundStatementBlock body)
+        {
+            Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.Syntax = syntax;
+            this.VariableOpt = variableOpt;
+            this.Body = body;
+        }
+
+        public CatchClauseSyntax Syntax { get; private set; }
+
+        public string VariableOpt { get; private set; }
+
+        public BoundStatementBlock Body { get; private set; }
+
+        public override IEnumerable<BaseBoundNode> Children
+        {
+            get
+            {
+                yield return this.Body;
+            }
+        }
+    }
+
+    internal sealed class BoundFinallyClause : BaseBoundNode
+    {
+        public BoundFinallyClause(FinallyClauseSyntax syntax, BoundStatementBlock body)
+        {
+            Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.Syntax = syntax;
+            this.Body = body;
+        }
+
+        public FinallyClauseSyntax Syntax { get; private set; }
+
+        public BoundStatementBlock Body { get; private set; }
+
+        public override IEnumerable<BaseBoundNode> Children
+        {
+            get
+            {
+                yield return this.Body;
+            }
+        }
+    }
+
+    internal sealed class BoundTryStatement : BaseBoundStatement
+    {
+        public BoundTryStatement(TryStatementSyntax syntax, BoundStatementBlock body, BoundCatchClause catchClauseOpt, BoundFinallyClause finallyClauseOpt)
+        {
+            Debug.Assert(!syntax.IsDefault(), "'syntax' must not be null.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.Syntax = syntax;
+            this.Body = body;
+            this.CatchClauseOpt = catchClauseOpt;
+            this.FinallyClauseOpt = finallyClauseOpt;
+        }
+
+        public TryStatementSyntax Syntax { get; private set; }
+
+        public BoundStatementBlock Body { get; private set; }
+
+        public BoundCatchClause CatchClauseOpt { get; private set; }
+
+        public BoundFinallyClause FinallyClauseOpt { get; private set; }
+
+        public override IEnumerable<BaseBoundNode> Children
+        {
+            get
+            {
+                yield return this.Body;
+                if (!this.CatchClauseOpt.IsDefault())
+                {
+                    yield return this.CatchClauseOpt;
+                }
+
+                if (!this.FinallyClauseOpt.IsDefault())
+                {
+                    yield return this.FinallyClauseOpt;
+                }
             }
         }
     }

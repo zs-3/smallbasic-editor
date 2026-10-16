@@ -67,6 +67,51 @@ ans = 36");
         }
 
         [Fact]
+        public Task ItEvaluatesSelectCaseStatement()
+        {
+            return new SmallBasicCompilation(@"
+val = 2
+res = """"
+Select Case val
+    Case 1
+        res = ""one""
+    Case 2
+        res = ""two""
+    Else
+        res = ""other""
+EndSelect
+").VerifyRealRuntime(@"
+val = 2
+res = two");
+        }
+
+        [Fact]
+        public Task ItEvaluatesTryCatchStatement()
+        {
+            return new SmallBasicCompilation(@"
+a = 10
+b = 20
+Try
+    c = a + b
+Catch ex
+    c = 0
+EndTry
+").VerifyRealRuntime(@"
+a = 10
+b = 20
+c = 30");
+        }
+
+        [Fact]
+        public Task ItEvaluatesSystemReflectionCall()
+        {
+            return new SmallBasicCompilation(@"
+res = System.Call(""System.Math"", ""Abs"", -42)
+").VerifyRealRuntime(@"
+res = 42");
+        }
+
+        [Fact]
         public void ItProvidesCompletionsForNewKeywords()
         {
             var compilation = new SmallBasicCompilation(@"F");

@@ -11,8 +11,20 @@
   <TokenKind Name="Step" Display="&quot;Step&quot;" />
   <TokenKind Name="EndFor" Display="&quot;EndFor&quot;" />
 
+  <TokenKind Name="ForEach" Display="&quot;ForEach&quot;" />
+  <TokenKind Name="In" Display="&quot;In&quot;" />
+
   <TokenKind Name="While" Display="&quot;While&quot;" />
   <TokenKind Name="EndWhile" Display="&quot;EndWhile&quot;" />
+
+  <TokenKind Name="Select" Display="&quot;Select&quot;" />
+  <TokenKind Name="Case" Display="&quot;Case&quot;" />
+  <TokenKind Name="EndSelect" Display="&quot;EndSelect&quot;" />
+
+  <TokenKind Name="Try" Display="&quot;Try&quot;" />
+  <TokenKind Name="Catch" Display="&quot;Catch&quot;" />
+  <TokenKind Name="Finally" Display="&quot;Finally&quot;" />
+  <TokenKind Name="EndTry" Display="&quot;EndTry&quot;" />
 
   <TokenKind Name="Sub" Display="&quot;Sub&quot;" />
   <TokenKind Name="EndSub" Display="&quot;EndSub&quot;" />

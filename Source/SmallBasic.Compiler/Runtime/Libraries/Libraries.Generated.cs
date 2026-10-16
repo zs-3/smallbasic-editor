@@ -4910,6 +4910,71 @@ namespace SmallBasic.Compiler.Runtime
                 types.Add("Timer", new Library("Timer", LibrariesResources.Timer, "stopwatch", usesGraphicsWindow: false, usesTextWindow: false, methods, properties, events));
             }
 
+            // Initialization code for library 'System'
+            {
+                var methods = new Dictionary<string, Method>(StringComparer.CurrentCultureIgnoreCase);
+
+                // Initialization code for method System.Call:
+                {
+                    Task execute(SmallBasicEngine engine)
+                    {
+                        BaseValue arg1 = engine.EvaluationStack.Pop();
+                        string methodName = engine.EvaluationStack.Pop().ToString();
+                        string typeName = engine.EvaluationStack.Pop().ToString();
+                        BaseValue returnValue = engine.Libraries.System.Call(typeName: typeName, methodName: methodName, arg1: arg1);
+                        engine.EvaluationStack.Push(returnValue);
+                        return Task.CompletedTask;
+                    }
+
+                    methods.Add("Call", new Method(
+                        name: "Call",
+                        description: LibrariesResources.System_Call,
+                        returnsValue: true,
+                        returnValueDescription: LibrariesResources.System_Call_ReturnValue,
+                        parameters: new Dictionary<string, Parameter>(StringComparer.CurrentCultureIgnoreCase)
+                        {
+                            { "typeName", new Parameter("typeName", LibrariesResources.System_Call_typeName) },
+                            { "methodName", new Parameter("methodName", LibrariesResources.System_Call_methodName) },
+                            { "arg1", new Parameter("arg1", LibrariesResources.System_Call_arg1) },
+                        },
+                        isDeprecated: false,
+                        needsDesktop: false,
+                        execute: execute));
+                }
+
+                // Initialization code for method System.GetProperty:
+                {
+                    Task execute(SmallBasicEngine engine)
+                    {
+                        string propertyName = engine.EvaluationStack.Pop().ToString();
+                        string typeName = engine.EvaluationStack.Pop().ToString();
+                        BaseValue returnValue = engine.Libraries.System.GetProperty(typeName: typeName, propertyName: propertyName);
+                        engine.EvaluationStack.Push(returnValue);
+                        return Task.CompletedTask;
+                    }
+
+                    methods.Add("GetProperty", new Method(
+                        name: "GetProperty",
+                        description: LibrariesResources.System_GetProperty,
+                        returnsValue: true,
+                        returnValueDescription: LibrariesResources.System_GetProperty_ReturnValue,
+                        parameters: new Dictionary<string, Parameter>(StringComparer.CurrentCultureIgnoreCase)
+                        {
+                            { "typeName", new Parameter("typeName", LibrariesResources.System_GetProperty_typeName) },
+                            { "propertyName", new Parameter("propertyName", LibrariesResources.System_GetProperty_propertyName) },
+                        },
+                        isDeprecated: false,
+                        needsDesktop: false,
+                        execute: execute));
+                }
+
+                var properties = new Dictionary<string, Property>(StringComparer.CurrentCultureIgnoreCase);
+
+                var events = new Dictionary<string, Event>(StringComparer.CurrentCultureIgnoreCase);
+
+                types.Add("System", new Library("System", LibrariesResources.System, "cog", usesGraphicsWindow: false, usesTextWindow: false, methods, properties, events));
+            }
+
             // Initialization code for library 'Turtle'
             {
                 var methods = new Dictionary<string, Method>(StringComparer.CurrentCultureIgnoreCase);
