@@ -37,6 +37,8 @@ namespace SmallBasic.Compiler.Runtime
 
         private class BuiltInSystemLibrary : ISystemLibrary
         {
+            public bool Exists(string filePath) => System.IO.File.Exists(filePath);
+
             public BaseValue Call(string typeName, string methodName, BaseValue arg1)
             {
                 try
@@ -97,6 +99,9 @@ namespace SmallBasic.Compiler.Runtime
         {
             public decimal Get_Pi() => (decimal)System.Math.PI;
             public decimal Abs(decimal number) => System.Math.Abs(number);
+            public decimal Atan2(decimal y, decimal x) => (decimal)System.Math.Atan2((double)y, (double)x);
+            public decimal Clamp(decimal value, decimal min, decimal max) => System.Math.Max(min, System.Math.Min(max, value));
+            public decimal Lerp(decimal start, decimal end, decimal amount) => start + (end - start) * amount;
             public decimal Ceiling(decimal number) => System.Math.Ceiling(number);
             public decimal Floor(decimal number) => System.Math.Floor(number);
             public decimal NaturalLog(decimal number) => (decimal)System.Math.Log((double)number);

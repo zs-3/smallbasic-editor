@@ -2637,6 +2637,88 @@ namespace SmallBasic.Compiler.Runtime
                         execute: execute));
                 }
 
+                // Initialization code for method Math.Atan2:
+                {
+                    Task execute(SmallBasicEngine engine)
+                    {
+                        decimal x = engine.EvaluationStack.Pop().ToNumber();
+                        decimal y = engine.EvaluationStack.Pop().ToNumber();
+                        decimal returnValue = engine.Libraries.Math.Atan2(y: y, x: x);
+                        engine.EvaluationStack.Push(new NumberValue(returnValue));
+                        return Task.CompletedTask;
+                    }
+
+                    methods.Add("Atan2", new Method(
+                        name: "Atan2",
+                        description: LibrariesResources.Math_Atan2,
+                        returnsValue: true,
+                        returnValueDescription: LibrariesResources.Math_Atan2_ReturnValue,
+                        parameters: new Dictionary<string, Parameter>(StringComparer.CurrentCultureIgnoreCase)
+                        {
+                            { "y", new Parameter("y", LibrariesResources.Math_Atan2_y) },
+                            { "x", new Parameter("x", LibrariesResources.Math_Atan2_x) },
+                        },
+                        isDeprecated: false,
+                        needsDesktop: false,
+                        execute: execute));
+                }
+
+                // Initialization code for method Math.Clamp:
+                {
+                    Task execute(SmallBasicEngine engine)
+                    {
+                        decimal max = engine.EvaluationStack.Pop().ToNumber();
+                        decimal min = engine.EvaluationStack.Pop().ToNumber();
+                        decimal value = engine.EvaluationStack.Pop().ToNumber();
+                        decimal returnValue = engine.Libraries.Math.Clamp(value: value, min: min, max: max);
+                        engine.EvaluationStack.Push(new NumberValue(returnValue));
+                        return Task.CompletedTask;
+                    }
+
+                    methods.Add("Clamp", new Method(
+                        name: "Clamp",
+                        description: LibrariesResources.Math_Clamp,
+                        returnsValue: true,
+                        returnValueDescription: LibrariesResources.Math_Clamp_ReturnValue,
+                        parameters: new Dictionary<string, Parameter>(StringComparer.CurrentCultureIgnoreCase)
+                        {
+                            { "value", new Parameter("value", LibrariesResources.Math_Clamp_value) },
+                            { "min", new Parameter("min", LibrariesResources.Math_Clamp_min) },
+                            { "max", new Parameter("max", LibrariesResources.Math_Clamp_max) },
+                        },
+                        isDeprecated: false,
+                        needsDesktop: false,
+                        execute: execute));
+                }
+
+                // Initialization code for method Math.Lerp:
+                {
+                    Task execute(SmallBasicEngine engine)
+                    {
+                        decimal amount = engine.EvaluationStack.Pop().ToNumber();
+                        decimal end = engine.EvaluationStack.Pop().ToNumber();
+                        decimal start = engine.EvaluationStack.Pop().ToNumber();
+                        decimal returnValue = engine.Libraries.Math.Lerp(start: start, end: end, amount: amount);
+                        engine.EvaluationStack.Push(new NumberValue(returnValue));
+                        return Task.CompletedTask;
+                    }
+
+                    methods.Add("Lerp", new Method(
+                        name: "Lerp",
+                        description: LibrariesResources.Math_Lerp,
+                        returnsValue: true,
+                        returnValueDescription: LibrariesResources.Math_Lerp_ReturnValue,
+                        parameters: new Dictionary<string, Parameter>(StringComparer.CurrentCultureIgnoreCase)
+                        {
+                            { "start", new Parameter("start", LibrariesResources.Math_Lerp_start) },
+                            { "end", new Parameter("end", LibrariesResources.Math_Lerp_end) },
+                            { "amount", new Parameter("amount", LibrariesResources.Math_Lerp_amount) },
+                        },
+                        isDeprecated: false,
+                        needsDesktop: false,
+                        execute: execute));
+                }
+
                 // Initialization code for method Math.ArcCos:
                 {
                     Task execute(SmallBasicEngine engine)
@@ -4913,6 +4995,30 @@ namespace SmallBasic.Compiler.Runtime
             // Initialization code for library 'System'
             {
                 var methods = new Dictionary<string, Method>(StringComparer.CurrentCultureIgnoreCase);
+
+                // Initialization code for method System.Exists:
+                {
+                    Task execute(SmallBasicEngine engine)
+                    {
+                        string filePath = engine.EvaluationStack.Pop().ToString();
+                        bool returnValue = engine.Libraries.System.Exists(filePath: filePath);
+                        engine.EvaluationStack.Push(new BooleanValue(returnValue));
+                        return Task.CompletedTask;
+                    }
+
+                    methods.Add("Exists", new Method(
+                        name: "Exists",
+                        description: LibrariesResources.System_Exists,
+                        returnsValue: true,
+                        returnValueDescription: LibrariesResources.System_Exists_ReturnValue,
+                        parameters: new Dictionary<string, Parameter>(StringComparer.CurrentCultureIgnoreCase)
+                        {
+                            { "filePath", new Parameter("filePath", LibrariesResources.System_Exists_filePath) },
+                        },
+                        isDeprecated: false,
+                        needsDesktop: false,
+                        execute: execute));
+                }
 
                 // Initialization code for method System.Call:
                 {

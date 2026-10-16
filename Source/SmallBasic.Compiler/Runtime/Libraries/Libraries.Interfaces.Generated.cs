@@ -252,6 +252,12 @@ namespace SmallBasic.Compiler.Runtime
 
         decimal Abs(decimal number);
 
+        decimal Atan2(decimal y, decimal x);
+
+        decimal Clamp(decimal value, decimal min, decimal max);
+
+        decimal Lerp(decimal start, decimal end, decimal amount);
+
         decimal ArcCos(decimal cosValue);
 
         decimal ArcSin(decimal sinValue);
@@ -441,6 +447,8 @@ namespace SmallBasic.Compiler.Runtime
 
     public interface ISystemLibrary
     {
+        bool Exists(string filePath);
+
         BaseValue Call(string typeName, string methodName, BaseValue arg1);
 
         BaseValue GetProperty(string typeName, string propertyName);

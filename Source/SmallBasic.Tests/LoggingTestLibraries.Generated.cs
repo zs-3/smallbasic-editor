@@ -676,6 +676,24 @@ namespace SmallBasic.Tests
             return 0m;
         }
 
+        public decimal Atan2(decimal y, decimal x)
+        {
+            this.log.AppendLine($"Math.Atan2(y: '{y}', x: '{x}')");
+            return 0m;
+        }
+
+        public decimal Clamp(decimal value, decimal min, decimal max)
+        {
+            this.log.AppendLine($"Math.Clamp(value: '{value}', min: '{min}', max: '{max}')");
+            return 0m;
+        }
+
+        public decimal Lerp(decimal start, decimal end, decimal amount)
+        {
+            this.log.AppendLine($"Math.Lerp(start: '{start}', end: '{end}', amount: '{amount}')");
+            return 0m;
+        }
+
         public decimal ArcCos(decimal cosValue)
         {
             this.log.AppendLine($"Math.ArcCos(cosValue: '{cosValue}')");
@@ -1224,6 +1242,12 @@ namespace SmallBasic.Tests
         public LoggingSystemLibrary(StringBuilder log)
         {
             this.log = log;
+        }
+
+        public bool Exists(string filePath)
+        {
+            this.log.AppendLine($"System.Exists(filePath: '{filePath}')");
+            return false;
         }
 
         public BaseValue Call(string typeName, string methodName, BaseValue arg1)
