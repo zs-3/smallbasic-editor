@@ -1,4 +1,4 @@
-﻿// <copyright file="Parser.cs" company="MIT License">
+// <copyright file="Parser.cs" company="MIT License">
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 // </copyright>
 
@@ -214,7 +214,6 @@ namespace SmallBasic.Compiler.Parsing
 
                     return new UnrecognizedStatementSyntax(foundToken);
             }
-
         }
 
         private IfStatementSyntax ParseIfStatement()
@@ -304,6 +303,7 @@ namespace SmallBasic.Compiler.Parsing
             {
                 this.Eat(TokenKind.Case);
             }
+
             var expression = this.ParseBaseExpression();
             this.RunToEndOfLine();
 

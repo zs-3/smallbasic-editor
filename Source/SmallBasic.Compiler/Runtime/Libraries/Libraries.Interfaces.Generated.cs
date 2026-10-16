@@ -9,6 +9,7 @@ namespace SmallBasic.Compiler.Runtime
 {
     using System;
     using System.Threading.Tasks;
+    using SmallBasic.Utilities;
 
     public interface IArrayLibrary
     {
@@ -523,13 +524,13 @@ namespace SmallBasic.Compiler.Runtime
     {
         public static void SetEventCallbacks(this IEngineLibraries libraries, SmallBasicEngine engine)
         {
-            if (libraries.Controls != null)
+            if (!libraries.Controls.IsDefault())
             {
                 libraries.Controls.ButtonClicked += () => engine.RaiseEvent("Controls", "ButtonClicked");
                 libraries.Controls.TextTyped += () => engine.RaiseEvent("Controls", "TextTyped");
             }
 
-            if (libraries.GraphicsWindow != null)
+            if (!libraries.GraphicsWindow.IsDefault())
             {
                 libraries.GraphicsWindow.KeyDown += () => engine.RaiseEvent("GraphicsWindow", "KeyDown");
                 libraries.GraphicsWindow.KeyUp += () => engine.RaiseEvent("GraphicsWindow", "KeyUp");
@@ -539,7 +540,7 @@ namespace SmallBasic.Compiler.Runtime
                 libraries.GraphicsWindow.TextInput += () => engine.RaiseEvent("GraphicsWindow", "TextInput");
             }
 
-            if (libraries.Timer != null)
+            if (!libraries.Timer.IsDefault())
             {
                 libraries.Timer.Tick += () => engine.RaiseEvent("Timer", "Tick");
             }
