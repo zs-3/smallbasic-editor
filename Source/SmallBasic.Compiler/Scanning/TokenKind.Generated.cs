@@ -21,10 +21,25 @@ namespace SmallBasic.Compiler.Scanning
         To,
         Step,
         EndFor,
+        ForEach,
+        In,
         While,
         EndWhile,
+        Select,
+        Case,
+        EndSelect,
+        Try,
+        Catch,
+        Finally,
+        EndTry,
         Sub,
         EndSub,
+        Function,
+        Fn,
+        EndFunction,
+        EndFn,
+        Return,
+        Import,
         GoTo,
         Or,
         And,
@@ -67,10 +82,25 @@ namespace SmallBasic.Compiler.Scanning
                 case TokenKind.To: return "To";
                 case TokenKind.Step: return "Step";
                 case TokenKind.EndFor: return "EndFor";
+                case TokenKind.ForEach: return "ForEach";
+                case TokenKind.In: return "In";
                 case TokenKind.While: return "While";
                 case TokenKind.EndWhile: return "EndWhile";
+                case TokenKind.Select: return "Select";
+                case TokenKind.Case: return "Case";
+                case TokenKind.EndSelect: return "EndSelect";
+                case TokenKind.Try: return "Try";
+                case TokenKind.Catch: return "Catch";
+                case TokenKind.Finally: return "Finally";
+                case TokenKind.EndTry: return "EndTry";
                 case TokenKind.Sub: return "Sub";
                 case TokenKind.EndSub: return "EndSub";
+                case TokenKind.Function: return "Function";
+                case TokenKind.Fn: return "Fn";
+                case TokenKind.EndFunction: return "EndFunction";
+                case TokenKind.EndFn: return "EndFn";
+                case TokenKind.Return: return "Return";
+                case TokenKind.Import: return "Import";
                 case TokenKind.GoTo: return "GoTo";
                 case TokenKind.Or: return "Or";
                 case TokenKind.And: return "And";

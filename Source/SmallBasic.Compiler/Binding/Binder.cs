@@ -28,6 +28,7 @@ namespace SmallBasic.Compiler.Binding
             var mainModule = new List<BaseBoundStatement>();
             var subModules = new Dictionary<string, BoundSubModule>();
 
+            // First pass: collect submodules and functions
             foreach (var syntax in syntaxTree.Body)
             {
                 switch (syntax)
@@ -35,7 +36,7 @@ namespace SmallBasic.Compiler.Binding
                     case SubModuleStatementSyntax subModuleStatement:
                         {
                             var body = this.BindStatementBlock(subModuleStatement.Body);
-                            var subModule = new BoundSubModule(subModuleStatement, subModuleStatement.NameToken.Text, body);
+                            var subModule = new BoundSubModule(subModuleStatement, subModuleStatement.NameToken.Text, Array.Empty<string>(), body);
 
                             if (subModules.ContainsKey(subModule.Name))
                             {
@@ -49,12 +50,19 @@ namespace SmallBasic.Compiler.Binding
                             break;
                         }
 
-                    default:
+                    case FunctionDeclarationSyntax functionDecl:
                         {
-                            var statement = this.BindStatementOpt(syntax);
-                            if (!statement.IsDefault())
+                            var parameters = functionDecl.Parameters.Select(p => p.IdentifierToken.Text).ToList();
+                            var body = this.BindStatementBlock(functionDecl.Body);
+                            var subModule = new BoundSubModule(functionDecl, functionDecl.NameToken.Text, parameters, body);
+
+                            if (subModules.ContainsKey(subModule.Name))
                             {
-                                mainModule.Add(statement);
+                                this.diagnostics.ReportTwoSubModulesWithTheSameName(functionDecl.NameToken.Range, subModule.Name);
+                            }
+                            else
+                            {
+                                subModules.Add(subModule.Name, subModule);
                             }
 
                             break;
@@ -62,10 +70,23 @@ namespace SmallBasic.Compiler.Binding
                 }
             }
 
+            this.SubModules = subModules;
+
+            // Second pass: bind main module statements
+            foreach (var syntax in syntaxTree.Body)
+            {
+                if (!(syntax is SubModuleStatementSyntax) && !(syntax is FunctionDeclarationSyntax))
+                {
+                    var statement = this.BindStatementOpt(syntax);
+                    if (!statement.IsDefault())
+                    {
+                        mainModule.Add(statement);
+                    }
+                }
+            }
+
             this.MainModule = new BoundStatementBlock(syntaxTree, mainModule);
             this.CheckForLabelErrors(this.MainModule);
-
-            this.SubModules = subModules;
             foreach (var subModule in this.SubModules.Values)
             {
                 this.CheckForLabelErrors(subModule.Body);
@@ -90,7 +111,21 @@ namespace SmallBasic.Compiler.Binding
                 case IfStatementSyntax ifStatement: return this.BindIfStatement(ifStatement);
                 case WhileStatementSyntax whileStatement: return this.BindWhileStatement(whileStatement);
                 case ForStatementSyntax forStatement: return this.BindForStatement(forStatement);
+                case ForEachStatementSyntax forEachStatement: return this.BindForEachStatement(forEachStatement);
+                case SelectStatementSyntax selectStatement: return this.BindSelectStatement(selectStatement);
+                case TryStatementSyntax tryStatement: return this.BindTryStatement(tryStatement);
                 case ExpressionStatementSyntax expressionStatement: return this.BindExpressionStatement(expressionStatement);
+
+                case ReturnStatementSyntax returnStatement:
+                    {
+                        BaseBoundExpression expr = null;
+                        if (!returnStatement.ExpressionOpt.IsDefault())
+                        {
+                            expr = this.BindExpression(returnStatement.ExpressionOpt);
+                        }
+
+                        return new BoundReturnStatement(returnStatement, hasExpression: !expr.IsDefault(), expressionOpt: expr);
+                    }
 
                 case LabelStatementSyntax labelStatement: return new BoundLabelStatement(labelStatement, labelStatement.LabelToken.Text);
                 case GoToStatementSyntax goToStatement: return new BoundGoToStatement(goToStatement, goToStatement.LabelToken.Text);
@@ -149,6 +184,54 @@ namespace SmallBasic.Compiler.Binding
             BoundStatementBlock body = this.BindStatementBlock(syntax.Body);
 
             return new BoundWhileStatement(syntax, expression, body);
+        }
+
+        private BoundForEachStatement BindForEachStatement(ForEachStatementSyntax syntax)
+        {
+            string identifier = syntax.IdentifierToken.Text;
+            BaseBoundExpression collection = this.BindExpression(syntax.CollectionExpression);
+            BoundStatementBlock body = this.BindStatementBlock(syntax.Body);
+            return new BoundForEachStatement(syntax, identifier, collection, body);
+        }
+
+        private BoundSelectStatement BindSelectStatement(SelectStatementSyntax syntax)
+        {
+            BaseBoundExpression expression = this.BindExpression(syntax.Expression);
+            var cases = new List<BoundCaseClause>();
+            foreach (var clause in syntax.Cases)
+            {
+                BaseBoundExpression valExprOpt = null;
+                if (!clause.ValueExpressionOpt.IsDefault())
+                {
+                    valExprOpt = this.BindExpression(clause.ValueExpressionOpt);
+                }
+
+                BoundStatementBlock body = this.BindStatementBlock(clause.Body);
+                cases.Add(new BoundCaseClause(clause, isElse: clause.CaseToken.Kind == TokenKind.Else, valueExpressionOpt: valExprOpt, body: body));
+            }
+
+            return new BoundSelectStatement(syntax, expression, cases);
+        }
+
+        private BoundTryStatement BindTryStatement(TryStatementSyntax syntax)
+        {
+            BoundStatementBlock body = this.BindStatementBlock(syntax.Body);
+            BoundCatchClause catchClauseOpt = null;
+            if (!syntax.CatchClauseOpt.IsDefault())
+            {
+                string varName = syntax.CatchClauseOpt.VariableTokenOpt.IsDefault() ? null : syntax.CatchClauseOpt.VariableTokenOpt.Text;
+                BoundStatementBlock catchBody = this.BindStatementBlock(syntax.CatchClauseOpt.Body);
+                catchClauseOpt = new BoundCatchClause(syntax.CatchClauseOpt, varName, catchBody);
+            }
+
+            BoundFinallyClause finallyClauseOpt = null;
+            if (!syntax.FinallyClauseOpt.IsDefault())
+            {
+                BoundStatementBlock finallyBody = this.BindStatementBlock(syntax.FinallyClauseOpt.Body);
+                finallyClauseOpt = new BoundFinallyClause(syntax.FinallyClauseOpt, finallyBody);
+            }
+
+            return new BoundTryStatement(syntax, body, catchClauseOpt, finallyClauseOpt);
         }
 
         private BoundForStatement BindForStatement(ForStatementSyntax syntax)
@@ -243,6 +326,13 @@ namespace SmallBasic.Compiler.Binding
                             this.diagnostics.ReportAssigningNonSubModuleToEvent(@event.Syntax.Range);
                             return new BoundInvalidExpressionStatement(syntax, assignment);
                         }
+                    }
+
+                case BoundSubModuleInvocationExpression subModuleInvocation:
+                case BoundSubModuleExpression subModule:
+                    {
+                        this.diagnostics.ReportUnassignedExpressionStatement(syntax.Range);
+                        return new BoundInvalidExpressionStatement(syntax, assignment);
                     }
 
                 default:
@@ -502,21 +592,29 @@ namespace SmallBasic.Compiler.Binding
 
                 case BoundSubModuleExpression subModule:
                     {
+                        int expectedParams = 0;
+                        bool isFunction = false;
+                        if (!this.SubModules.IsDefault() && this.SubModules.TryGetValue(subModule.Name, out var subModuleNode))
+                        {
+                            expectedParams = subModuleNode.Parameters.Count;
+                            isFunction = subModuleNode.Syntax is FunctionDeclarationSyntax;
+                        }
+
                         if (!hasErrors)
                         {
-                            if (arguments.Count != 0)
+                            if (arguments.Count != expectedParams)
                             {
                                 hasErrors = true;
-                                this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, 0);
+                                this.diagnostics.ReportUnexpectedArgumentsCount(syntax.Range, arguments.Count, expectedParams);
                             }
-                            else if (expectsValue)
+                            else if (expectsValue && !isFunction)
                             {
                                 hasErrors = true;
                                 this.diagnostics.ReportExpectedExpressionWithAValue(syntax.Range);
                             }
                         }
 
-                        return new BoundSubModuleInvocationExpression(syntax, hasValue: false, hasErrors, subModule.Name);
+                        return new BoundSubModuleInvocationExpression(syntax, hasValue: isFunction, hasErrors: hasErrors, name: subModule.Name, arguments: arguments);
                     }
 
                 default:
@@ -542,14 +640,9 @@ namespace SmallBasic.Compiler.Binding
 
                 return new BoundLibraryTypeExpression(syntax, hasValue: false, hasErrors, name);
             }
-            else if (this.definedSubModules.Contains(name))
+            else if (!expectsValue && this.definedSubModules.Contains(name))
             {
-                if (expectsValue)
-                {
-                    return new BoundVariableExpression(syntax, hasValue: true, hasErrors, name);
-                }
-
-                return new BoundSubModuleExpression(syntax, hasValue: false, hasErrors, name);
+                return new BoundSubModuleExpression(syntax, hasValue: false, hasErrors: hasErrors, name: name);
             }
             else
             {

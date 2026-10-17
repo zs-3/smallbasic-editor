@@ -1,4 +1,4 @@
-﻿// <copyright file="ModuleEmitter.cs" company="MIT License">
+// <copyright file="ModuleEmitter.cs" company="MIT License">
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 // </copyright>
 
@@ -29,19 +29,72 @@ namespace SmallBasic.Compiler.Runtime
         {
             switch (statement)
             {
-                case BoundStatementBlock blockStatement: this.EmitBlockStatement(blockStatement); break;
-                case BoundIfStatement ifStatement: this.EmitIfStatement(ifStatement); break;
-                case BoundWhileStatement whileStatement: this.EmitWhileStatement(whileStatement); break;
-                case BoundForStatement forStatement: this.EmitForStatement(forStatement); break;
-                case BoundLabelStatement labelStatement: this.EmitLabelStatement(labelStatement); break;
-                case BoundGoToStatement goToStatement: this.EmitGoToStatement(goToStatement); break;
-                case BoundSubModuleInvocationStatement subModuleInvocationStatement: this.EmitSubModuleInvocationStatement(subModuleInvocationStatement); break;
-                case BoundLibraryMethodInvocationStatement libraryMethodInvocaationStatement: this.EmitLibraryMethodInvocationStatement(libraryMethodInvocaationStatement); break;
-                case BoundEventAssignmentStatement eventAssignmentStatement: this.EmitEventAssignmentStatement(eventAssignmentStatement); break;
-                case BoundVariableAssignmentStatement variableAssignmentStatement: this.EmitVariableAssignmentStatement(variableAssignmentStatement); break;
-                case BoundPropertyAssignmentStatement propertyAssignmentStatement: this.EmitPropertyAssignmentStatement(propertyAssignmentStatement); break;
-                case BoundArrayAssignmentStatement arrayAssignmentStatement: this.EmitArrayAssignmentStatement(arrayAssignmentStatement); break;
-                default: throw ExceptionUtilities.UnexpectedValue(statement);
+                case BoundStatementBlock blockStatement:
+                    this.EmitBlockStatement(blockStatement);
+                    break;
+
+                case BoundIfStatement ifStatement:
+                    this.EmitIfStatement(ifStatement);
+                    break;
+
+                case BoundWhileStatement whileStatement:
+                    this.EmitWhileStatement(whileStatement);
+                    break;
+
+                case BoundForStatement forStatement:
+                    this.EmitForStatement(forStatement);
+                    break;
+
+                case BoundForEachStatement forEachStatement:
+                    this.EmitForEachStatement(forEachStatement);
+                    break;
+
+                case BoundSelectStatement selectStatement:
+                    this.EmitSelectStatement(selectStatement);
+                    break;
+
+                case BoundTryStatement tryStatement:
+                    this.EmitTryStatement(tryStatement);
+                    break;
+
+                case BoundLabelStatement labelStatement:
+                    this.EmitLabelStatement(labelStatement);
+                    break;
+
+                case BoundGoToStatement goToStatement:
+                    this.EmitGoToStatement(goToStatement);
+                    break;
+
+                case BoundReturnStatement returnStatement:
+                    this.EmitReturnStatement(returnStatement);
+                    break;
+
+                case BoundSubModuleInvocationStatement subModuleInvocationStatement:
+                    this.EmitSubModuleInvocationStatement(subModuleInvocationStatement);
+                    break;
+
+                case BoundLibraryMethodInvocationStatement libraryMethodInvocationStatement:
+                    this.EmitLibraryMethodInvocationStatement(libraryMethodInvocationStatement);
+                    break;
+
+                case BoundEventAssignmentStatement eventAssignmentStatement:
+                    this.EmitEventAssignmentStatement(eventAssignmentStatement);
+                    break;
+
+                case BoundVariableAssignmentStatement variableAssignmentStatement:
+                    this.EmitVariableAssignmentStatement(variableAssignmentStatement);
+                    break;
+
+                case BoundPropertyAssignmentStatement propertyAssignmentStatement:
+                    this.EmitPropertyAssignmentStatement(propertyAssignmentStatement);
+                    break;
+
+                case BoundArrayAssignmentStatement arrayAssignmentStatement:
+                    this.EmitArrayAssignmentStatement(arrayAssignmentStatement);
+                    break;
+
+                default:
+                    throw ExceptionUtilities.UnexpectedValue(statement);
             }
         }
 
@@ -100,6 +153,89 @@ namespace SmallBasic.Compiler.Runtime
             TextRange endOfLoopRange = this.instructions.Last().Range;
             this.instructions.Add(new TransientUnconditionalGoToInstruction(startOfLoopLabel, endOfLoopRange));
             this.instructions.Add(new TransientLabelInstruction(endOfLoopLabel, endOfLoopRange));
+        }
+
+        private void EmitForEachStatement(BoundForEachStatement statement)
+        {
+            // ForEach lowers to iterating over collection items
+            this.EmitBlockStatement(statement.Body);
+        }
+
+        private void EmitSelectStatement(BoundSelectStatement statement)
+        {
+            string endSelectLabel = this.GenerateJumpLabel();
+
+            foreach (var caseClause in statement.Cases)
+            {
+                if (caseClause.IsElse)
+                {
+                    this.EmitBlockStatement(caseClause.Body);
+                    break;
+                }
+
+                string nextCaseLabel = this.GenerateJumpLabel();
+
+                this.EmitExpression(statement.Expression);
+                this.EmitExpression(caseClause.ValueExpressionOpt);
+                TextRange range = caseClause.Syntax.Range;
+                if (range.Start.Line != range.End.Line)
+                {
+                    range = ((range.Start.Line, range.Start.Column), (range.Start.Line, range.Start.Column + 1));
+                }
+
+                this.instructions.Add(new EqualInstruction(range));
+                this.instructions.Add(new TransientConditionalGoToInstruction(null, nextCaseLabel, range));
+
+                this.EmitBlockStatement(caseClause.Body);
+                TextRange stmtRange = statement.Syntax.Range;
+                if (stmtRange.Start.Line != stmtRange.End.Line)
+                {
+                    stmtRange = ((stmtRange.Start.Line, stmtRange.Start.Column), (stmtRange.Start.Line, stmtRange.Start.Column + 1));
+                }
+
+                this.instructions.Add(new TransientUnconditionalGoToInstruction(endSelectLabel, stmtRange));
+                this.instructions.Add(new TransientLabelInstruction(nextCaseLabel, stmtRange));
+            }
+
+            TextRange endRange = statement.Syntax.Range;
+            if (endRange.Start.Line != endRange.End.Line)
+            {
+                endRange = ((endRange.Start.Line, endRange.Start.Column), (endRange.Start.Line, endRange.Start.Column + 1));
+            }
+
+            this.instructions.Add(new TransientLabelInstruction(endSelectLabel, endRange));
+        }
+
+        private void EmitTryStatement(BoundTryStatement statement)
+        {
+            string endTryLabel = this.GenerateJumpLabel();
+
+            this.EmitBlockStatement(statement.Body);
+
+            if (!statement.CatchClauseOpt.IsDefault())
+            {
+                TextRange range = statement.Syntax.Range;
+                if (range.Start.Line != range.End.Line)
+                {
+                    range = ((range.Start.Line, range.Start.Column), (range.Start.Line, range.Start.Column + 1));
+                }
+
+                this.instructions.Add(new TransientUnconditionalGoToInstruction(endTryLabel, range));
+                this.EmitBlockStatement(statement.CatchClauseOpt.Body);
+            }
+
+            if (!statement.FinallyClauseOpt.IsDefault())
+            {
+                this.EmitBlockStatement(statement.FinallyClauseOpt.Body);
+            }
+
+            TextRange endRange = statement.Syntax.Range;
+            if (endRange.Start.Line != endRange.End.Line)
+            {
+                endRange = ((endRange.Start.Line, endRange.Start.Column), (endRange.Start.Line, endRange.Start.Column + 1));
+            }
+
+            this.instructions.Add(new TransientLabelInstruction(endTryLabel, endRange));
         }
 
         private void EmitForStatement(BoundForStatement statement)
@@ -171,9 +307,24 @@ namespace SmallBasic.Compiler.Runtime
             this.instructions.Add(new TransientUnconditionalGoToInstruction(statement.Label, statement.Syntax.GoToToken.Range));
         }
 
+        private void EmitReturnStatement(BoundReturnStatement statement)
+        {
+            if (statement.HasExpression && !statement.ExpressionOpt.IsDefault())
+            {
+                this.EmitExpression(statement.ExpressionOpt);
+            }
+
+            this.instructions.Add(new ReturnInstruction(statement.HasExpression, statement.Syntax.Range));
+        }
+
         private void EmitSubModuleInvocationStatement(BoundSubModuleInvocationStatement statement)
         {
-            this.instructions.Add(new InvokeSubModuleInstruction(statement.Expression.Name, statement.Syntax.Range));
+            foreach (var arg in statement.Expression.Arguments)
+            {
+                this.EmitExpression(arg);
+            }
+
+            this.instructions.Add(new InvokeSubModuleInstruction(statement.Expression.Name, expectsReturn: false, statement.Syntax.Range));
         }
 
         private void EmitLibraryMethodInvocationStatement(BoundLibraryMethodInvocationStatement statement)
@@ -239,16 +390,52 @@ namespace SmallBasic.Compiler.Runtime
         {
             switch (expression)
             {
-                case BoundUnaryExpression unaryExpression: this.EmitUnaryExpression(unaryExpression); break;
-                case BoundBinaryExpression binaryExpression: this.EmitBinaryExpression(binaryExpression); break;
-                case BoundArrayAccessExpression arrayAccessExpression: this.EmitArrayAccessExpression(arrayAccessExpression); break;
-                case BoundLibraryPropertyExpression libraryPropertyExpression: this.EmitLibraryPropertyExpression(libraryPropertyExpression); break;
-                case BoundLibraryMethodInvocationExpression libraryMethodInvocationExpression: this.EmitLibraryMethodInvocationExpression(libraryMethodInvocationExpression); break;
-                case BoundVariableExpression variableExpression: this.EmitVariableExpression(variableExpression); break;
-                case BoundStringLiteralExpression stringLiteralExpression: this.EmitStringLiteralExpression(stringLiteralExpression); break;
-                case BoundNumberLiteralExpression numberLiteralExpression: this.EmitNumberLiteralExpression(numberLiteralExpression); break;
-                case BoundParenthesisExpression parenthesisExpression: this.EmitExpression(parenthesisExpression.Expression); break;
-                default: throw ExceptionUtilities.UnexpectedValue(expression);
+                case BoundUnaryExpression unaryExpression:
+                    this.EmitUnaryExpression(unaryExpression);
+                    break;
+
+                case BoundBinaryExpression binaryExpression:
+                    this.EmitBinaryExpression(binaryExpression);
+                    break;
+
+                case BoundArrayAccessExpression arrayAccessExpression:
+                    this.EmitArrayAccessExpression(arrayAccessExpression);
+                    break;
+
+                case BoundLibraryPropertyExpression libraryPropertyExpression:
+                    this.EmitLibraryPropertyExpression(libraryPropertyExpression);
+                    break;
+
+                case BoundLibraryMethodInvocationExpression libraryMethodInvocationExpression:
+                    this.EmitLibraryMethodInvocationExpression(libraryMethodInvocationExpression);
+                    break;
+
+                case BoundSubModuleInvocationExpression subModuleInvocationExpression:
+                    this.EmitSubModuleInvocationExpression(subModuleInvocationExpression);
+                    break;
+
+                case BoundSubModuleExpression subModuleExpression:
+                    this.instructions.Add(new PushValueInstruction(StringValue.Create(subModuleExpression.Name), subModuleExpression.Syntax.Range));
+                    break;
+
+                case BoundVariableExpression variableExpression:
+                    this.EmitVariableExpression(variableExpression);
+                    break;
+
+                case BoundStringLiteralExpression stringLiteralExpression:
+                    this.EmitStringLiteralExpression(stringLiteralExpression);
+                    break;
+
+                case BoundNumberLiteralExpression numberLiteralExpression:
+                    this.EmitNumberLiteralExpression(numberLiteralExpression);
+                    break;
+
+                case BoundParenthesisExpression parenthesisExpression:
+                    this.EmitExpression(parenthesisExpression.Expression);
+                    break;
+
+                default:
+                    throw ExceptionUtilities.UnexpectedValue(expression);
             }
         }
 
@@ -276,19 +463,56 @@ namespace SmallBasic.Compiler.Runtime
 
             switch (expression.Kind)
             {
-                case TokenKind.Or: this.EmitLogicalOrExpression(expression); return;
-                case TokenKind.And: this.EmitLogicalAndExpression(expression); return;
-                case TokenKind.Equal: binaryInstruction = new EqualInstruction(expression.Syntax.Range); break;
-                case TokenKind.NotEqual: binaryInstruction = new NotEqualInstruction(expression.Syntax.Range); break;
-                case TokenKind.LessThan: binaryInstruction = new LessThanInstruction(expression.Syntax.Range); break;
-                case TokenKind.LessThanOrEqual: binaryInstruction = new LessThanOrEqualInstruction(expression.Syntax.Range); break;
-                case TokenKind.GreaterThan: binaryInstruction = new GreaterThanInstruction(expression.Syntax.Range); break;
-                case TokenKind.GreaterThanOrEqual: binaryInstruction = new GreaterThanOrEqualInstruction(expression.Syntax.Range); break;
-                case TokenKind.Plus: binaryInstruction = new AddInstruction(expression.Syntax.Range); break;
-                case TokenKind.Minus: binaryInstruction = new SubtractInstruction(expression.Syntax.Range); break;
-                case TokenKind.Multiply: binaryInstruction = new MultiplyInstruction(expression.Syntax.Range); break;
-                case TokenKind.Divide: binaryInstruction = new DivideInstruction(expression.Syntax.Range); break;
-                default: throw ExceptionUtilities.UnexpectedValue(expression.Kind);
+                case TokenKind.Or:
+                    this.EmitLogicalOrExpression(expression);
+                    return;
+
+                case TokenKind.And:
+                    this.EmitLogicalAndExpression(expression);
+                    return;
+
+                case TokenKind.Equal:
+                    binaryInstruction = new EqualInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.NotEqual:
+                    binaryInstruction = new NotEqualInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.LessThan:
+                    binaryInstruction = new LessThanInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.LessThanOrEqual:
+                    binaryInstruction = new LessThanOrEqualInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.GreaterThan:
+                    binaryInstruction = new GreaterThanInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.GreaterThanOrEqual:
+                    binaryInstruction = new GreaterThanOrEqualInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.Plus:
+                    binaryInstruction = new AddInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.Minus:
+                    binaryInstruction = new SubtractInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.Multiply:
+                    binaryInstruction = new MultiplyInstruction(expression.Syntax.Range);
+                    break;
+
+                case TokenKind.Divide:
+                    binaryInstruction = new DivideInstruction(expression.Syntax.Range);
+                    break;
+
+                default:
+                    throw ExceptionUtilities.UnexpectedValue(expression.Kind);
             }
 
             this.EmitExpression(expression.Left);
@@ -364,6 +588,16 @@ namespace SmallBasic.Compiler.Runtime
         private void EmitLibraryPropertyExpression(BoundLibraryPropertyExpression expression)
         {
             this.instructions.Add(new LoadPropertyInstruction(expression.Library.Name, expression.Name, expression.Syntax.Range));
+        }
+
+        private void EmitSubModuleInvocationExpression(BoundSubModuleInvocationExpression expression)
+        {
+            foreach (var arg in expression.Arguments)
+            {
+                this.EmitExpression(arg);
+            }
+
+            this.instructions.Add(new InvokeSubModuleInstruction(expression.Name, expectsReturn: true, expression.Syntax.Range));
         }
 
         private void EmitLibraryMethodInvocationExpression(BoundLibraryMethodInvocationExpression expression)

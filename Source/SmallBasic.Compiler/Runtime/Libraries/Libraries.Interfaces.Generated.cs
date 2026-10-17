@@ -9,6 +9,7 @@ namespace SmallBasic.Compiler.Runtime
 {
     using System;
     using System.Threading.Tasks;
+    using SmallBasic.Utilities;
 
     public interface IArrayLibrary
     {
@@ -523,17 +524,26 @@ namespace SmallBasic.Compiler.Runtime
     {
         public static void SetEventCallbacks(this IEngineLibraries libraries, SmallBasicEngine engine)
         {
-            libraries.Controls.ButtonClicked += () => engine.RaiseEvent("Controls", "ButtonClicked");
-            libraries.Controls.TextTyped += () => engine.RaiseEvent("Controls", "TextTyped");
+            if (!libraries.Controls.IsDefault())
+            {
+                libraries.Controls.ButtonClicked += () => engine.RaiseEvent("Controls", "ButtonClicked");
+                libraries.Controls.TextTyped += () => engine.RaiseEvent("Controls", "TextTyped");
+            }
 
-            libraries.GraphicsWindow.KeyDown += () => engine.RaiseEvent("GraphicsWindow", "KeyDown");
-            libraries.GraphicsWindow.KeyUp += () => engine.RaiseEvent("GraphicsWindow", "KeyUp");
-            libraries.GraphicsWindow.MouseDown += () => engine.RaiseEvent("GraphicsWindow", "MouseDown");
-            libraries.GraphicsWindow.MouseMove += () => engine.RaiseEvent("GraphicsWindow", "MouseMove");
-            libraries.GraphicsWindow.MouseUp += () => engine.RaiseEvent("GraphicsWindow", "MouseUp");
-            libraries.GraphicsWindow.TextInput += () => engine.RaiseEvent("GraphicsWindow", "TextInput");
+            if (!libraries.GraphicsWindow.IsDefault())
+            {
+                libraries.GraphicsWindow.KeyDown += () => engine.RaiseEvent("GraphicsWindow", "KeyDown");
+                libraries.GraphicsWindow.KeyUp += () => engine.RaiseEvent("GraphicsWindow", "KeyUp");
+                libraries.GraphicsWindow.MouseDown += () => engine.RaiseEvent("GraphicsWindow", "MouseDown");
+                libraries.GraphicsWindow.MouseMove += () => engine.RaiseEvent("GraphicsWindow", "MouseMove");
+                libraries.GraphicsWindow.MouseUp += () => engine.RaiseEvent("GraphicsWindow", "MouseUp");
+                libraries.GraphicsWindow.TextInput += () => engine.RaiseEvent("GraphicsWindow", "TextInput");
+            }
 
-            libraries.Timer.Tick += () => engine.RaiseEvent("Timer", "Tick");
+            if (!libraries.Timer.IsDefault())
+            {
+                libraries.Timer.Tick += () => engine.RaiseEvent("Timer", "Tick");
+            }
         }
     }
 }

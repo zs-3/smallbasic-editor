@@ -1,4 +1,4 @@
-﻿// <copyright file="Parser.cs" company="MIT License">
+// <copyright file="Parser.cs" company="MIT License">
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 // </copyright>
 
@@ -46,6 +46,8 @@ namespace SmallBasic.Compiler.Parsing
                 switch (this.Peek())
                 {
                     case TokenKind.Sub:
+                    case TokenKind.Function:
+                    case TokenKind.Fn:
                         statements.Add(this.ParseSubModuleDeclaration());
                         break;
                     default:
@@ -59,16 +61,72 @@ namespace SmallBasic.Compiler.Parsing
 
         public StatementBlockSyntax SyntaxTree { get; private set; }
 
-        private SubModuleStatementSyntax ParseSubModuleDeclaration()
+        private BaseStatementSyntax ParseSubModuleDeclaration()
         {
-            var subToken = this.Eat(TokenKind.Sub);
+            var startKind = this.Peek();
+            var subToken = this.Eat(startKind);
             var nameToken = this.Eat(TokenKind.Identifier);
+
+            Token leftParenOpt = null;
+            Token rightParenOpt = null;
+            List<ParameterSyntax> parameters = new List<ParameterSyntax>();
+
+            if (this.index < this.tokens.Count && this.Peek() == TokenKind.LeftParen)
+            {
+                leftParenOpt = this.Eat(TokenKind.LeftParen);
+                while (this.index < this.tokens.Count && this.Peek() != TokenKind.RightParen)
+                {
+                    var paramIdentifier = this.Eat(TokenKind.Identifier);
+                    Token commaOpt = null;
+                    if (this.index < this.tokens.Count && this.Peek() == TokenKind.Comma)
+                    {
+                        commaOpt = this.Eat(TokenKind.Comma);
+                    }
+
+                    parameters.Add(new ParameterSyntax(paramIdentifier, commaOpt));
+                    if (commaOpt.IsDefault())
+                    {
+                        break;
+                    }
+                }
+
+                if (this.index < this.tokens.Count && this.Peek() == TokenKind.RightParen)
+                {
+                    rightParenOpt = this.Eat(TokenKind.RightParen);
+                }
+            }
+
             this.RunToEndOfLine();
 
-            var statements = this.ParseStatementsExcept(TokenKind.Sub, TokenKind.EndSub);
+            TokenKind endKind1 = TokenKind.EndSub;
+            TokenKind endKind2 = TokenKind.EndFunction;
+            TokenKind endKind3 = TokenKind.EndFn;
 
-            var endSubToken = this.Eat(TokenKind.EndSub);
+            if (startKind == TokenKind.Function || startKind == TokenKind.Fn)
+            {
+                endKind1 = TokenKind.EndFunction;
+                endKind2 = TokenKind.EndFn;
+                endKind3 = TokenKind.EndSub;
+            }
+
+            var statements = this.ParseStatementsExcept(TokenKind.Sub, TokenKind.Function, TokenKind.Fn, endKind1, endKind2, endKind3);
+
+            Token endSubToken = null;
+            if (this.index < this.tokens.Count && (this.Peek() == endKind1 || this.Peek() == endKind2 || this.Peek() == endKind3 || this.Peek() == TokenKind.EndSub || this.Peek() == TokenKind.EndFunction || this.Peek() == TokenKind.EndFn))
+            {
+                endSubToken = this.Eat(this.Peek());
+            }
+            else
+            {
+                endSubToken = this.Eat(endKind1);
+            }
+
             this.RunToEndOfLine();
+
+            if (startKind == TokenKind.Function || startKind == TokenKind.Fn || !leftParenOpt.IsDefault())
+            {
+                return new FunctionDeclarationSyntax(subToken, nameToken, leftParenOpt, parameters, rightParenOpt, statements, endSubToken);
+            }
 
             return new SubModuleStatementSyntax(subToken, nameToken, statements, endSubToken);
         }
@@ -92,8 +150,14 @@ namespace SmallBasic.Compiler.Parsing
                     return this.ParseIfStatement();
                 case TokenKind.For:
                     return this.ParseForStatement();
+                case TokenKind.ForEach:
+                    return this.ParseForEachStatement();
                 case TokenKind.While:
                     return this.ParseWhileStatement();
+                case TokenKind.Select:
+                    return this.ParseSelectStatement();
+                case TokenKind.Try:
+                    return this.ParseTryStatement();
 
                 case TokenKind.Identifier:
                     if (this.index + 1 < this.tokens.Count && this.tokens[this.index + 1].Kind == TokenKind.Colon)
@@ -109,6 +173,24 @@ namespace SmallBasic.Compiler.Parsing
                         this.RunToEndOfLine();
                         return new ExpressionStatementSyntax(expression);
                     }
+
+                case TokenKind.Return:
+                    var returnToken = this.Eat(TokenKind.Return);
+                    BaseExpressionSyntax returnExprOpt = null;
+                    var currentLine = returnToken.Range.Start.Line;
+                    if (this.index < this.tokens.Count && this.tokens[this.index].Range.Start.Line == currentLine && this.tokens[this.index].Kind != TokenKind.Comment)
+                    {
+                        returnExprOpt = this.ParseBaseExpression();
+                    }
+
+                    this.RunToEndOfLine();
+                    return new ReturnStatementSyntax(returnToken, returnExprOpt);
+
+                case TokenKind.Import:
+                    var importToken = this.Eat(TokenKind.Import);
+                    var pathToken = this.Eat(TokenKind.StringLiteral);
+                    this.RunToEndOfLine();
+                    return new ImportStatementSyntax(importToken, pathToken);
 
                 case TokenKind.GoTo:
                     var goToToken = this.Eat(TokenKind.GoTo);
@@ -197,6 +279,90 @@ namespace SmallBasic.Compiler.Parsing
             this.RunToEndOfLine();
 
             return new ForStatementSyntax(forToken, identifierToken, equalToken, fromExpression, toToken, toExpression, stepClauseOpt, statements, endForToken);
+        }
+
+        private ForEachStatementSyntax ParseForEachStatement()
+        {
+            var forEachToken = this.Eat(TokenKind.ForEach);
+            var identifierToken = this.Eat(TokenKind.Identifier);
+            var inToken = this.Eat(TokenKind.In);
+            var collectionExpr = this.ParseBaseExpression();
+            this.RunToEndOfLine();
+
+            var statements = this.ParseStatementsExcept(TokenKind.EndFor);
+            var endForToken = this.Eat(TokenKind.EndFor);
+            this.RunToEndOfLine();
+
+            return new ForEachStatementSyntax(forEachToken, identifierToken, inToken, collectionExpr, statements, endForToken);
+        }
+
+        private SelectStatementSyntax ParseSelectStatement()
+        {
+            var selectToken = this.Eat(TokenKind.Select);
+            if (this.Peek() == TokenKind.Case)
+            {
+                this.Eat(TokenKind.Case);
+            }
+
+            var expression = this.ParseBaseExpression();
+            this.RunToEndOfLine();
+
+            var cases = new List<CaseClauseSyntax>();
+            while (this.index < this.tokens.Count && (this.Peek() == TokenKind.Case || this.Peek() == TokenKind.Else))
+            {
+                var caseToken = this.Eat(this.Peek());
+                BaseExpressionSyntax valExprOpt = null;
+                if (caseToken.Kind == TokenKind.Case)
+                {
+                    valExprOpt = this.ParseBaseExpression();
+                }
+
+                this.RunToEndOfLine();
+                var statements = this.ParseStatementsExcept(TokenKind.Case, TokenKind.Else, TokenKind.EndSelect);
+                cases.Add(new CaseClauseSyntax(caseToken, valExprOpt, statements));
+            }
+
+            var endSelectToken = this.Eat(TokenKind.EndSelect);
+            this.RunToEndOfLine();
+
+            return new SelectStatementSyntax(selectToken, expression, cases, endSelectToken);
+        }
+
+        private TryStatementSyntax ParseTryStatement()
+        {
+            var tryToken = this.Eat(TokenKind.Try);
+            this.RunToEndOfLine();
+
+            var body = this.ParseStatementsExcept(TokenKind.Catch, TokenKind.Finally, TokenKind.EndTry);
+
+            CatchClauseSyntax catchClauseOpt = null;
+            if (this.index < this.tokens.Count && this.Peek() == TokenKind.Catch)
+            {
+                var catchToken = this.Eat(TokenKind.Catch);
+                Token varTokenOpt = null;
+                if (this.index < this.tokens.Count && this.Peek() == TokenKind.Identifier)
+                {
+                    varTokenOpt = this.Eat(TokenKind.Identifier);
+                }
+
+                this.RunToEndOfLine();
+                var catchBody = this.ParseStatementsExcept(TokenKind.Finally, TokenKind.EndTry);
+                catchClauseOpt = new CatchClauseSyntax(catchToken, varTokenOpt, catchBody);
+            }
+
+            FinallyClauseSyntax finallyClauseOpt = null;
+            if (this.index < this.tokens.Count && this.Peek() == TokenKind.Finally)
+            {
+                var finallyToken = this.Eat(TokenKind.Finally);
+                this.RunToEndOfLine();
+                var finallyBody = this.ParseStatementsExcept(TokenKind.EndTry);
+                finallyClauseOpt = new FinallyClauseSyntax(finallyToken, finallyBody);
+            }
+
+            var endTryToken = this.Eat(TokenKind.EndTry);
+            this.RunToEndOfLine();
+
+            return new TryStatementSyntax(tryToken, body, catchClauseOpt, finallyClauseOpt, endTryToken);
         }
 
         private WhileStatementSyntax ParseWhileStatement()

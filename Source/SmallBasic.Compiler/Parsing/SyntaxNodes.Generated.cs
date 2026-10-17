@@ -23,6 +23,18 @@ namespace SmallBasic.Compiler.Parsing
                 case SubModuleStatementSyntax subModuleStatement:
                     this.VisitSubModuleStatement(subModuleStatement);
                     break;
+                case ParameterSyntax parameter:
+                    this.VisitParameter(parameter);
+                    break;
+                case FunctionDeclarationSyntax functionDeclaration:
+                    this.VisitFunctionDeclaration(functionDeclaration);
+                    break;
+                case ReturnStatementSyntax returnStatement:
+                    this.VisitReturnStatement(returnStatement);
+                    break;
+                case ImportStatementSyntax importStatement:
+                    this.VisitImportStatement(importStatement);
+                    break;
                 case StatementBlockSyntax statementBlock:
                     this.VisitStatementBlock(statementBlock);
                     break;
@@ -46,6 +58,24 @@ namespace SmallBasic.Compiler.Parsing
                     break;
                 case ForStatementSyntax forStatement:
                     this.VisitForStatement(forStatement);
+                    break;
+                case ForEachStatementSyntax forEachStatement:
+                    this.VisitForEachStatement(forEachStatement);
+                    break;
+                case CaseClauseSyntax caseClause:
+                    this.VisitCaseClause(caseClause);
+                    break;
+                case SelectStatementSyntax selectStatement:
+                    this.VisitSelectStatement(selectStatement);
+                    break;
+                case CatchClauseSyntax catchClause:
+                    this.VisitCatchClause(catchClause);
+                    break;
+                case FinallyClauseSyntax finallyClause:
+                    this.VisitFinallyClause(finallyClause);
+                    break;
+                case TryStatementSyntax tryStatement:
+                    this.VisitTryStatement(tryStatement);
                     break;
                 case LabelStatementSyntax labelStatement:
                     this.VisitLabelStatement(labelStatement);
@@ -105,6 +135,26 @@ namespace SmallBasic.Compiler.Parsing
             this.DefaultVisit(node);
         }
 
+        private protected virtual void VisitParameter(ParameterSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitFunctionDeclaration(FunctionDeclarationSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitReturnStatement(ReturnStatementSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitImportStatement(ImportStatementSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
         private protected virtual void VisitStatementBlock(StatementBlockSyntax node)
         {
             this.DefaultVisit(node);
@@ -141,6 +191,36 @@ namespace SmallBasic.Compiler.Parsing
         }
 
         private protected virtual void VisitForStatement(ForStatementSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitForEachStatement(ForEachStatementSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitCaseClause(CaseClauseSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitSelectStatement(SelectStatementSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitCatchClause(CatchClauseSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitFinallyClause(FinallyClauseSyntax node)
+        {
+            this.DefaultVisit(node);
+        }
+
+        private protected virtual void VisitTryStatement(TryStatementSyntax node)
         {
             this.DefaultVisit(node);
         }
@@ -287,6 +367,239 @@ namespace SmallBasic.Compiler.Parsing
                 TextPosition calculateEnd()
                 {
                     return this.EndSubToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class ParameterSyntax : BaseSyntaxNode
+    {
+        public ParameterSyntax(Token identifierToken, Token commaTokenOpt)
+        {
+            Debug.Assert(!identifierToken.IsDefault(), "'identifierToken' must not be null.");
+            Debug.Assert(identifierToken.Kind == TokenKind.Identifier, "'identifierToken' must have a TokenKind of 'Identifier'.");
+            if (!commaTokenOpt.IsDefault())
+            {
+                Debug.Assert(commaTokenOpt.Kind == TokenKind.Comma, "'commaTokenOpt' must have a TokenKind of 'Comma'.");
+            }
+
+            this.IdentifierToken = identifierToken;
+            this.CommaTokenOpt = commaTokenOpt;
+        }
+
+        public Token IdentifierToken { get; private set; }
+
+        public Token CommaTokenOpt { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                return Enumerable.Empty<BaseSyntaxNode>();
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.IdentifierToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    if (!this.CommaTokenOpt.IsDefault())
+                    {
+                        return this.CommaTokenOpt.Range.End;
+                    }
+
+                    return this.IdentifierToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class FunctionDeclarationSyntax : BaseStatementSyntax
+    {
+        public FunctionDeclarationSyntax(Token functionToken, Token nameToken, Token leftParenTokenOpt, IReadOnlyList<ParameterSyntax> parameters, Token rightParenTokenOpt, StatementBlockSyntax body, Token endFunctionToken)
+        {
+            Debug.Assert(!functionToken.IsDefault(), "'functionToken' must not be null.");
+            Debug.Assert(functionToken.Kind == TokenKind.Function || functionToken.Kind == TokenKind.Fn || functionToken.Kind == TokenKind.Sub, "'functionToken' must have a TokenKind of 'Function,Fn,Sub'.");
+            Debug.Assert(!nameToken.IsDefault(), "'nameToken' must not be null.");
+            Debug.Assert(nameToken.Kind == TokenKind.Identifier, "'nameToken' must have a TokenKind of 'Identifier'.");
+            if (!leftParenTokenOpt.IsDefault())
+            {
+                Debug.Assert(leftParenTokenOpt.Kind == TokenKind.LeftParen, "'leftParenTokenOpt' must have a TokenKind of 'LeftParen'.");
+            }
+
+            Debug.Assert(!parameters.IsDefault(), "'parameters' must not be null.");
+            if (!rightParenTokenOpt.IsDefault())
+            {
+                Debug.Assert(rightParenTokenOpt.Kind == TokenKind.RightParen, "'rightParenTokenOpt' must have a TokenKind of 'RightParen'.");
+            }
+
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+            Debug.Assert(!endFunctionToken.IsDefault(), "'endFunctionToken' must not be null.");
+            Debug.Assert(endFunctionToken.Kind == TokenKind.EndFunction || endFunctionToken.Kind == TokenKind.EndFn || endFunctionToken.Kind == TokenKind.EndSub, "'endFunctionToken' must have a TokenKind of 'EndFunction,EndFn,EndSub'.");
+
+            this.FunctionToken = functionToken;
+            this.NameToken = nameToken;
+            this.LeftParenTokenOpt = leftParenTokenOpt;
+            this.Parameters = parameters;
+            foreach (var child in this.Parameters)
+            {
+                child.Parent = this;
+            }
+
+            this.RightParenTokenOpt = rightParenTokenOpt;
+            this.Body = body;
+            this.Body.Parent = this;
+            this.EndFunctionToken = endFunctionToken;
+        }
+
+        public Token FunctionToken { get; private set; }
+
+        public Token NameToken { get; private set; }
+
+        public Token LeftParenTokenOpt { get; private set; }
+
+        public IReadOnlyList<ParameterSyntax> Parameters { get; private set; }
+
+        public Token RightParenTokenOpt { get; private set; }
+
+        public StatementBlockSyntax Body { get; private set; }
+
+        public Token EndFunctionToken { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                foreach (var child in this.Parameters)
+                {
+                    yield return child;
+                }
+
+                yield return this.Body;
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.FunctionToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.EndFunctionToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class ReturnStatementSyntax : BaseStatementSyntax
+    {
+        public ReturnStatementSyntax(Token returnToken, BaseExpressionSyntax expressionOpt)
+        {
+            Debug.Assert(!returnToken.IsDefault(), "'returnToken' must not be null.");
+            Debug.Assert(returnToken.Kind == TokenKind.Return, "'returnToken' must have a TokenKind of 'Return'.");
+
+            this.ReturnToken = returnToken;
+            this.ExpressionOpt = expressionOpt;
+            if (!this.ExpressionOpt.IsDefault())
+            {
+                this.ExpressionOpt.Parent = this;
+            }
+        }
+
+        public Token ReturnToken { get; private set; }
+
+        public BaseExpressionSyntax ExpressionOpt { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                if (!this.ExpressionOpt.IsDefault())
+                {
+                    yield return this.ExpressionOpt;
+                }
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.ReturnToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    if (!this.ExpressionOpt.IsDefault())
+                    {
+                        return this.ExpressionOpt.Range.End;
+                    }
+
+                    return this.ReturnToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class ImportStatementSyntax : BaseStatementSyntax
+    {
+        public ImportStatementSyntax(Token importToken, Token pathToken)
+        {
+            Debug.Assert(!importToken.IsDefault(), "'importToken' must not be null.");
+            Debug.Assert(importToken.Kind == TokenKind.Import, "'importToken' must have a TokenKind of 'Import'.");
+            Debug.Assert(!pathToken.IsDefault(), "'pathToken' must not be null.");
+            Debug.Assert(pathToken.Kind == TokenKind.StringLiteral, "'pathToken' must have a TokenKind of 'StringLiteral'.");
+
+            this.ImportToken = importToken;
+            this.PathToken = pathToken;
+        }
+
+        public Token ImportToken { get; private set; }
+
+        public Token PathToken { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                return Enumerable.Empty<BaseSyntaxNode>();
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.ImportToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.PathToken.Range.End;
                 }
             }
         }
@@ -756,6 +1069,360 @@ namespace SmallBasic.Compiler.Parsing
                 TextPosition calculateEnd()
                 {
                     return this.EndForToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class ForEachStatementSyntax : BaseStatementSyntax
+    {
+        public ForEachStatementSyntax(Token forEachToken, Token identifierToken, Token inToken, BaseExpressionSyntax collectionExpression, StatementBlockSyntax body, Token endForToken)
+        {
+            Debug.Assert(!forEachToken.IsDefault(), "'forEachToken' must not be null.");
+            Debug.Assert(forEachToken.Kind == TokenKind.ForEach, "'forEachToken' must have a TokenKind of 'ForEach'.");
+            Debug.Assert(!identifierToken.IsDefault(), "'identifierToken' must not be null.");
+            Debug.Assert(identifierToken.Kind == TokenKind.Identifier, "'identifierToken' must have a TokenKind of 'Identifier'.");
+            Debug.Assert(!inToken.IsDefault(), "'inToken' must not be null.");
+            Debug.Assert(inToken.Kind == TokenKind.In, "'inToken' must have a TokenKind of 'In'.");
+            Debug.Assert(!collectionExpression.IsDefault(), "'collectionExpression' must not be null.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+            Debug.Assert(!endForToken.IsDefault(), "'endForToken' must not be null.");
+            Debug.Assert(endForToken.Kind == TokenKind.EndFor, "'endForToken' must have a TokenKind of 'EndFor'.");
+
+            this.ForEachToken = forEachToken;
+            this.IdentifierToken = identifierToken;
+            this.InToken = inToken;
+            this.CollectionExpression = collectionExpression;
+            this.CollectionExpression.Parent = this;
+            this.Body = body;
+            this.Body.Parent = this;
+            this.EndForToken = endForToken;
+        }
+
+        public Token ForEachToken { get; private set; }
+
+        public Token IdentifierToken { get; private set; }
+
+        public Token InToken { get; private set; }
+
+        public BaseExpressionSyntax CollectionExpression { get; private set; }
+
+        public StatementBlockSyntax Body { get; private set; }
+
+        public Token EndForToken { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                yield return this.CollectionExpression;
+                yield return this.Body;
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.ForEachToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.EndForToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class CaseClauseSyntax : BaseSyntaxNode
+    {
+        public CaseClauseSyntax(Token caseToken, BaseExpressionSyntax valueExpressionOpt, StatementBlockSyntax body)
+        {
+            Debug.Assert(!caseToken.IsDefault(), "'caseToken' must not be null.");
+            Debug.Assert(caseToken.Kind == TokenKind.Case || caseToken.Kind == TokenKind.Else, "'caseToken' must have a TokenKind of 'Case,Else'.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.CaseToken = caseToken;
+            this.ValueExpressionOpt = valueExpressionOpt;
+            if (!this.ValueExpressionOpt.IsDefault())
+            {
+                this.ValueExpressionOpt.Parent = this;
+            }
+
+            this.Body = body;
+            this.Body.Parent = this;
+        }
+
+        public Token CaseToken { get; private set; }
+
+        public BaseExpressionSyntax ValueExpressionOpt { get; private set; }
+
+        public StatementBlockSyntax Body { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                if (!this.ValueExpressionOpt.IsDefault())
+                {
+                    yield return this.ValueExpressionOpt;
+                }
+
+                yield return this.Body;
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.CaseToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.Body.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class SelectStatementSyntax : BaseStatementSyntax
+    {
+        public SelectStatementSyntax(Token selectToken, BaseExpressionSyntax expression, IReadOnlyList<CaseClauseSyntax> cases, Token endSelectToken)
+        {
+            Debug.Assert(!selectToken.IsDefault(), "'selectToken' must not be null.");
+            Debug.Assert(selectToken.Kind == TokenKind.Select, "'selectToken' must have a TokenKind of 'Select'.");
+            Debug.Assert(!expression.IsDefault(), "'expression' must not be null.");
+            Debug.Assert(!cases.IsDefault(), "'cases' must not be null.");
+            Debug.Assert(!endSelectToken.IsDefault(), "'endSelectToken' must not be null.");
+            Debug.Assert(endSelectToken.Kind == TokenKind.EndSelect, "'endSelectToken' must have a TokenKind of 'EndSelect'.");
+
+            this.SelectToken = selectToken;
+            this.Expression = expression;
+            this.Expression.Parent = this;
+            this.Cases = cases;
+            foreach (var child in this.Cases)
+            {
+                child.Parent = this;
+            }
+
+            this.EndSelectToken = endSelectToken;
+        }
+
+        public Token SelectToken { get; private set; }
+
+        public BaseExpressionSyntax Expression { get; private set; }
+
+        public IReadOnlyList<CaseClauseSyntax> Cases { get; private set; }
+
+        public Token EndSelectToken { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                yield return this.Expression;
+                foreach (var child in this.Cases)
+                {
+                    yield return child;
+                }
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.SelectToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.EndSelectToken.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class CatchClauseSyntax : BaseSyntaxNode
+    {
+        public CatchClauseSyntax(Token catchToken, Token variableTokenOpt, StatementBlockSyntax body)
+        {
+            Debug.Assert(!catchToken.IsDefault(), "'catchToken' must not be null.");
+            Debug.Assert(catchToken.Kind == TokenKind.Catch, "'catchToken' must have a TokenKind of 'Catch'.");
+            if (!variableTokenOpt.IsDefault())
+            {
+                Debug.Assert(variableTokenOpt.Kind == TokenKind.Identifier, "'variableTokenOpt' must have a TokenKind of 'Identifier'.");
+            }
+
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.CatchToken = catchToken;
+            this.VariableTokenOpt = variableTokenOpt;
+            this.Body = body;
+            this.Body.Parent = this;
+        }
+
+        public Token CatchToken { get; private set; }
+
+        public Token VariableTokenOpt { get; private set; }
+
+        public StatementBlockSyntax Body { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                yield return this.Body;
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.CatchToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.Body.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class FinallyClauseSyntax : BaseSyntaxNode
+    {
+        public FinallyClauseSyntax(Token finallyToken, StatementBlockSyntax body)
+        {
+            Debug.Assert(!finallyToken.IsDefault(), "'finallyToken' must not be null.");
+            Debug.Assert(finallyToken.Kind == TokenKind.Finally, "'finallyToken' must have a TokenKind of 'Finally'.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+
+            this.FinallyToken = finallyToken;
+            this.Body = body;
+            this.Body.Parent = this;
+        }
+
+        public Token FinallyToken { get; private set; }
+
+        public StatementBlockSyntax Body { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                yield return this.Body;
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.FinallyToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.Body.Range.End;
+                }
+            }
+        }
+    }
+
+    internal sealed class TryStatementSyntax : BaseStatementSyntax
+    {
+        public TryStatementSyntax(Token tryToken, StatementBlockSyntax body, CatchClauseSyntax catchClauseOpt, FinallyClauseSyntax finallyClauseOpt, Token endTryToken)
+        {
+            Debug.Assert(!tryToken.IsDefault(), "'tryToken' must not be null.");
+            Debug.Assert(tryToken.Kind == TokenKind.Try, "'tryToken' must have a TokenKind of 'Try'.");
+            Debug.Assert(!body.IsDefault(), "'body' must not be null.");
+            Debug.Assert(!endTryToken.IsDefault(), "'endTryToken' must not be null.");
+            Debug.Assert(endTryToken.Kind == TokenKind.EndTry, "'endTryToken' must have a TokenKind of 'EndTry'.");
+
+            this.TryToken = tryToken;
+            this.Body = body;
+            this.Body.Parent = this;
+            this.CatchClauseOpt = catchClauseOpt;
+            if (!this.CatchClauseOpt.IsDefault())
+            {
+                this.CatchClauseOpt.Parent = this;
+            }
+
+            this.FinallyClauseOpt = finallyClauseOpt;
+            if (!this.FinallyClauseOpt.IsDefault())
+            {
+                this.FinallyClauseOpt.Parent = this;
+            }
+
+            this.EndTryToken = endTryToken;
+        }
+
+        public Token TryToken { get; private set; }
+
+        public StatementBlockSyntax Body { get; private set; }
+
+        public CatchClauseSyntax CatchClauseOpt { get; private set; }
+
+        public FinallyClauseSyntax FinallyClauseOpt { get; private set; }
+
+        public Token EndTryToken { get; private set; }
+
+        public override IEnumerable<BaseSyntaxNode> Children
+        {
+            get
+            {
+                yield return this.Body;
+                if (!this.CatchClauseOpt.IsDefault())
+                {
+                    yield return this.CatchClauseOpt;
+                }
+
+                if (!this.FinallyClauseOpt.IsDefault())
+                {
+                    yield return this.FinallyClauseOpt;
+                }
+            }
+        }
+
+        public override TextRange Range
+        {
+            get
+            {
+                return (calculateStart(), calculateEnd());
+
+                TextPosition calculateStart()
+                {
+                    return this.TryToken.Range.Start;
+                }
+
+                TextPosition calculateEnd()
+                {
+                    return this.EndTryToken.Range.End;
                 }
             }
         }

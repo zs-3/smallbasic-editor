@@ -1,4 +1,4 @@
-﻿// <copyright file="GenerateLibraryInterfaces.cs" company="MIT License">
+// <copyright file="GenerateLibraryInterfaces.cs" company="MIT License">
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 // </copyright>
 
@@ -17,6 +17,7 @@ namespace SmallBasic.Generators.Scanning
 
             this.Line("using System;");
             this.Line("using System.Threading.Tasks;");
+            this.Line("using SmallBasic.Utilities;");
             this.Blank();
 
             foreach (Library library in model)
@@ -112,10 +113,14 @@ namespace SmallBasic.Generators.Scanning
                     this.Blank();
                 }
 
+                this.Line($"if (!libraries.{library.Name}.IsDefault())");
+                this.Brace();
                 foreach (Event @event in library.Events)
                 {
                     this.Line($@"libraries.{library.Name}.{@event.Name} += () => engine.RaiseEvent(""{library.Name}"", ""{@event.Name}"");");
                 }
+
+                this.Unbrace();
             }
 
             this.Unbrace();

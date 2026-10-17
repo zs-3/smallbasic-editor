@@ -11,6 +11,39 @@
     </Members>
   </SyntaxNode>
 
+  <SyntaxNode Name="ParameterSyntax" Inherits="BaseSyntaxNode">
+    <Members>
+      <Member Name="IdentifierToken" Type="Token" TokenKinds="Identifier" />
+      <Member Name="CommaTokenOpt" Type="Token" IsOptional="true" TokenKinds="Comma" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="FunctionDeclarationSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="FunctionToken" Type="Token" TokenKinds="Function,Fn,Sub" />
+      <Member Name="NameToken" Type="Token" TokenKinds="Identifier" />
+      <Member Name="LeftParenTokenOpt" Type="Token" IsOptional="true" TokenKinds="LeftParen" />
+      <Member Name="Parameters" Type="ParameterSyntax" IsList="true" />
+      <Member Name="RightParenTokenOpt" Type="Token" IsOptional="true" TokenKinds="RightParen" />
+      <Member Name="Body" Type="StatementBlockSyntax" />
+      <Member Name="EndFunctionToken" Type="Token" TokenKinds="EndFunction,EndFn,EndSub" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="ReturnStatementSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="ReturnToken" Type="Token" TokenKinds="Return" />
+      <Member Name="ExpressionOpt" Type="BaseExpressionSyntax" IsOptional="true" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="ImportStatementSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="ImportToken" Type="Token" TokenKinds="Import" />
+      <Member Name="PathToken" Type="Token" TokenKinds="StringLiteral" />
+    </Members>
+  </SyntaxNode>
+
   <SyntaxNode Name="StatementBlockSyntax" Inherits="BaseStatementSyntax">
     <Members>
       <Member Name="Body" Type="BaseStatementSyntax" IsList="true" />
@@ -74,6 +107,56 @@
       <Member Name="StepClauseOpt" Type="ForStepClauseSyntax" IsOptional="true" />
       <Member Name="Body" Type="StatementBlockSyntax" />
       <Member Name="EndForToken" Type="Token" TokenKinds="EndFor" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="ForEachStatementSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="ForEachToken" Type="Token" TokenKinds="ForEach" />
+      <Member Name="IdentifierToken" Type="Token" TokenKinds="Identifier" />
+      <Member Name="InToken" Type="Token" TokenKinds="In" />
+      <Member Name="CollectionExpression" Type="BaseExpressionSyntax" />
+      <Member Name="Body" Type="StatementBlockSyntax" />
+      <Member Name="EndForToken" Type="Token" TokenKinds="EndFor" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="CaseClauseSyntax" Inherits="BaseSyntaxNode">
+    <Members>
+      <Member Name="CaseToken" Type="Token" TokenKinds="Case,Else" />
+      <Member Name="ValueExpressionOpt" Type="BaseExpressionSyntax" IsOptional="true" />
+      <Member Name="Body" Type="StatementBlockSyntax" />
+    </Members>
+  </SyntaxNode>
+  <SyntaxNode Name="SelectStatementSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="SelectToken" Type="Token" TokenKinds="Select" />
+      <Member Name="Expression" Type="BaseExpressionSyntax" />
+      <Member Name="Cases" Type="CaseClauseSyntax" IsList="true" />
+      <Member Name="EndSelectToken" Type="Token" TokenKinds="EndSelect" />
+    </Members>
+  </SyntaxNode>
+
+  <SyntaxNode Name="CatchClauseSyntax" Inherits="BaseSyntaxNode">
+    <Members>
+      <Member Name="CatchToken" Type="Token" TokenKinds="Catch" />
+      <Member Name="VariableTokenOpt" Type="Token" IsOptional="true" TokenKinds="Identifier" />
+      <Member Name="Body" Type="StatementBlockSyntax" />
+    </Members>
+  </SyntaxNode>
+  <SyntaxNode Name="FinallyClauseSyntax" Inherits="BaseSyntaxNode">
+    <Members>
+      <Member Name="FinallyToken" Type="Token" TokenKinds="Finally" />
+      <Member Name="Body" Type="StatementBlockSyntax" />
+    </Members>
+  </SyntaxNode>
+  <SyntaxNode Name="TryStatementSyntax" Inherits="BaseStatementSyntax">
+    <Members>
+      <Member Name="TryToken" Type="Token" TokenKinds="Try" />
+      <Member Name="Body" Type="StatementBlockSyntax" />
+      <Member Name="CatchClauseOpt" Type="CatchClauseSyntax" IsOptional="true" />
+      <Member Name="FinallyClauseOpt" Type="FinallyClauseSyntax" IsOptional="true" />
+      <Member Name="EndTryToken" Type="Token" TokenKinds="EndTry" />
     </Members>
   </SyntaxNode>
 

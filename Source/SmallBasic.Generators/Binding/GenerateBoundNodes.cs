@@ -86,7 +86,7 @@ namespace SmallBasic.Generators.Binding
                 }
             }
 
-            if (node.Name.Contains("Syntax"))
+            if (node.Name.Contains("Syntax", StringComparison.Ordinal))
             {
                 this.LogError($"Node '{node.Name}' name should not contain 'Syntax'.");
             }

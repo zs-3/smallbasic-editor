@@ -93,7 +93,7 @@ namespace SmallBasic.Generators.Parsing
                 this.LogError($"Node '{node.Name}' name should end with 'Syntax'.");
             }
 
-            if (node.Name.Contains("Bound"))
+            if (node.Name.Contains("Bound", StringComparison.Ordinal))
             {
                 this.LogError($"Node '{node.Name}' name should not contain 'Bound'.");
             }

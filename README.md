@@ -12,6 +12,9 @@ This is home to the new SmallBasic editor. It has the following projects:
 * **SmallBasic.Tests**: C# unit tests to test the compiler/engine.
 * **SmallBasic.Utilities**: helper utilities shared between different projects.
 
+#### Language Extensions & New Features
+For complete details and code examples of newly added compiler features (Functions with parameters/returns, relative module `Import`, `Select Case`, `Try/Catch/Finally`, `ForEach`, `Math` extensions, and `System.Call` .NET reflection interop), see [LANGUAGE_EXTENSIONS.md](LANGUAGE_EXTENSIONS.md).
+
 #### Developer Workflow
 
 1. Open **SmallBasic.sln** in Visual Studio 2017.

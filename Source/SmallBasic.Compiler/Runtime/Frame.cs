@@ -10,12 +10,15 @@ namespace SmallBasic.Compiler.Runtime
     {
         private int index = 0;
 
-        internal Frame(RuntimeModule module)
+        internal Frame(RuntimeModule module, bool expectsReturn = false)
         {
             this.Module = module;
+            this.ExpectsReturn = expectsReturn;
         }
 
         public RuntimeModule Module { get; private set; }
+
+        public bool ExpectsReturn { get; private set; }
 
         public int InstructionIndex
         {

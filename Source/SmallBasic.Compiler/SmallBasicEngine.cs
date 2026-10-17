@@ -53,10 +53,10 @@ namespace SmallBasic.Compiler
 
             this.Libraries.SetEventCallbacks(this);
 
-            RuntimeModule mainModule = this.EmitAndSaveModule("Program", compilation.MainModule);
+            RuntimeModule mainModule = this.EmitAndSaveModule("Program", Array.Empty<string>(), compilation.MainModule);
             foreach (BoundSubModule subModule in compilation.SubModules.Values)
             {
-                this.EmitAndSaveModule(subModule.Name, subModule.Body);
+                this.EmitAndSaveModule(subModule.Name, subModule.Parameters, subModule.Body);
             }
 
             this.ExecutionStack.AddLast(new Frame(mainModule));
@@ -188,10 +188,10 @@ namespace SmallBasic.Compiler
             this.State = ExecutionState.BlockedOnNumberInput;
         }
 
-        private RuntimeModule EmitAndSaveModule(string name, BoundStatementBlock body)
+        private RuntimeModule EmitAndSaveModule(string name, IReadOnlyList<string> parameters, BoundStatementBlock body)
         {
             ModuleEmitter emitter = new ModuleEmitter(body);
-            RuntimeModule module = new RuntimeModule(name, emitter.Instructions, body.Syntax);
+            RuntimeModule module = new RuntimeModule(name, parameters, emitter.Instructions, body.Syntax);
 
             this.Modules.Add(module.Name, module);
             return module;

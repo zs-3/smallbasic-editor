@@ -36,7 +36,7 @@
       <ClientWebPackArgs Include="w" Condition="'$(Watch)' == 'True'" />
     </ItemGroup>
 
-    <Exec Command="node --max-old-space-size=7168 $(MSBuildProjectDirectory)/node_modules/webpack/bin/webpack.js @(ClientWebPackArgs->'--%(Identity) %(Value)', ' ')" WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Exec Command="node --max-old-space-size=7168 $(MSBuildProjectDirectory)/node_modules/webpack/bin/webpack.js @(ClientWebPackArgs->'--%(Identity) %(Value)', ' ')" WorkingDirectory="$(MSBuildProjectDirectory)" EnvironmentVariables="NODE_OPTIONS=--openssl-legacy-provider" />
   </Target>
 
 </Project>
