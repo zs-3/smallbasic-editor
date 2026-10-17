@@ -5,5 +5,10 @@
 # Output files
 bin
 obj
+dist/
 node_modules
 wwwroot
+*.exe
+*.dll
+*.pdb
+*.runtimeconfig.json

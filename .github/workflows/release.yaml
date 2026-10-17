@@ -1,38 +1,54 @@
-name: Release Standalone Binaries
+name: Release Standalone Binaries and IDE
 
 on:
+  release:
+    types: [published, created]
   push:
     tags:
+      - '*'
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-release:
-    name: Build Standalone Binaries (${{ matrix.target.os }})
+    name: Build Standalone Release (${{ matrix.target.os }})
     runs-on: ${{ matrix.target.runner }}
     strategy:
       matrix:
         target:
           - os: win-x64
             runner: windows-latest
-            asset: sb-windows-x64.zip
+            asset: smallbasic-win-x64.zip
           - os: linux-x64
             runner: ubuntu-latest
-            asset: sb-linux-x64.tar.gz
+            asset: smallbasic-linux-x64.tar.gz
           - os: osx-x64
             runner: macos-latest
-            asset: sb-macos-x64.tar.gz
+            asset: smallbasic-macos-x64.tar.gz
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
       - name: Setup .NET 8 SDK
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
-      - name: Publish Standalone Binary
+      - name: Restore Node Packages for Webpack
+        run: yarn --ci
+        working-directory: ./Source/SmallBasic.Client
+
+      - name: Publish Self-Contained CLI / Compiler
         run: dotnet publish Source/SmallBasic.Cli/SmallBasic.Cli.csproj -c Release -r ${{ matrix.target.os }} --self-contained true /p:PublishSingleFile=true -o dist/${{ matrix.target.os }}
+
+      - name: Publish Editor / IDE
+        run: dotnet publish Source/SmallBasic.Editor/SmallBasic.Editor.csproj -c Release -o dist/${{ matrix.target.os }}/editor
 
       - name: Package Release Assets (Windows)
         if: matrix.target.runner == 'windows-latest'
@@ -42,9 +58,10 @@ jobs:
         if: matrix.target.runner != 'windows-latest'
         run: tar -czvf ${{ matrix.target.asset }} -C dist/${{ matrix.target.os }} .
 
-      - name: Create GitHub Release
+      - name: Attach Assets to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: ${{ matrix.target.asset }}
+          tag_name: ${{ github.event.release.tag_name || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
