@@ -129,12 +129,12 @@ namespace SmallBasicRunner
 
                 var references = new MetadataReference[]
                 {
-                    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Console).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Task).Assembly.Location),
-                    MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location),
-                    MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location),
-                    MetadataReference.CreateFromFile(typeof(SmallBasicCompilation).Assembly.Location)
+                    MetadataReference.CreateFromFile(GetAssemblyLocation(typeof(object))),
+                    MetadataReference.CreateFromFile(GetAssemblyLocation(typeof(Console))),
+                    MetadataReference.CreateFromFile(GetAssemblyLocation(typeof(Task))),
+                    MetadataReference.CreateFromFile(GetAssemblyLocation(Assembly.Load("netstandard"))),
+                    MetadataReference.CreateFromFile(GetAssemblyLocation(Assembly.Load("System.Runtime"))),
+                    MetadataReference.CreateFromFile(GetAssemblyLocation(typeof(SmallBasicCompilation)))
                 };
 
                 var csharpCompilation = CSharpCompilation.Create(
@@ -158,8 +158,8 @@ namespace SmallBasicRunner
 
                 // Copy compiler & utilities assemblies next to output so it runs out-of-the-box
                 string outDir = Path.GetDirectoryName(Path.GetFullPath(outFile)) ?? ".";
-                string compLoc = typeof(SmallBasicCompilation).Assembly.Location;
-                string utilLoc = typeof(SmallBasic.Utilities.ExceptionUtilities).Assembly.Location;
+                string compLoc = GetAssemblyLocation(typeof(SmallBasicCompilation));
+                string utilLoc = GetAssemblyLocation(typeof(SmallBasic.Utilities.ExceptionUtilities));
                 if (File.Exists(compLoc))
                 {
                     File.Copy(compLoc, Path.Combine(outDir, Path.GetFileName(compLoc)), overwrite: true);
@@ -190,6 +190,28 @@ namespace SmallBasicRunner
                 ShowHelp();
                 return 1;
             }
+        }
+
+        private static string GetAssemblyLocation(Type type)
+        {
+            string loc = type.Assembly.Location;
+            if (string.IsNullOrEmpty(loc))
+            {
+                loc = Path.Combine(AppContext.BaseDirectory, type.Assembly.GetName().Name + ".dll");
+            }
+
+            return loc;
+        }
+
+        private static string GetAssemblyLocation(Assembly assembly)
+        {
+            string loc = assembly.Location;
+            if (string.IsNullOrEmpty(loc))
+            {
+                loc = Path.Combine(AppContext.BaseDirectory, assembly.GetName().Name + ".dll");
+            }
+
+            return loc;
         }
 
         private static void ShowHelp()
